@@ -1,0 +1,54 @@
+name: Push workflow
+on: Push
+jobs:
+  lint:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Git repo
+        uses: actions/checkout@v6
+      
+      - name: Install NodeJS
+        uses: actions/setup-node@v6
+        with:
+          node-version: latest
+        
+      - name: Install NodeJS Dependencies
+        run: npm ci
+      
+      - name: Run Linters
+        run: npm run lint
+
+    test: 
+      needs: lint
+      runs-on: ubuntu-latest
+      steps:
+        - name: Checkout Git repo
+          uses: actions/checkout@v6
+        
+        - name: Install NodeJS
+          uses: actions/setup-node@v6
+          with:
+            node-version: latest
+          
+        - name: Install NodeJS Dependencies
+          run: npm ci
+        - name: Run tests
+          run: npm run test
+    
+    build:
+      needs: test
+      runs-on: ubuntu-latest
+      steps:
+        - name: Checkout Git repo
+          uses: actions/checkout@v6
+      
+        - name: Install NodeJS
+          uses: actions/setup-node@v6
+          with:
+            node-version: latest
+        
+        - name: Install NodeJS Dependencies
+          run: npm ci
+
+        - name: Build project
+          run: npm run build
