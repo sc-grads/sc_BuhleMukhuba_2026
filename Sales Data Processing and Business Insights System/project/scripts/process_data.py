@@ -38,7 +38,7 @@ logging.info("Handling missing values")
 
 df = df.fillna({"salesperson" : "Unknown"})
 
-df = df.fillna({"quantity" : round(df["quantity"].mean(numeric_only= True))})
+df = df.dropna(subset=["quantity"])
 
 print(df.isnull().sum())
 
