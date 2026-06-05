@@ -5,7 +5,7 @@ on:
     types: [opened, reopened, closed, synchronize]
   push:
     branches:
-      - "**"
+      - "main"
   create:
 
 jobs:
@@ -18,7 +18,6 @@ jobs:
           EVENT="${{ github.event_name }}"
           ACTION="${{ github.event.action }}"
           TEXT=""
-          DETAILS=""
 
           if [ "$EVENT" = "pull_request" ]; then
 
@@ -48,14 +47,9 @@ jobs:
 
           fi
 
-          if [ -z "$TEXT" ]; then
-            TEXT="GitHub Event Triggered: $EVENT"
-            DETAILS="Repo: ${{ github.repository }}"
-          fi
+          PAYLOAD=$(jq -n --arg text "$TEXT" --arg details "$DETAILS" \
+          '{text: ($text + "\n" + $details)}')
 
-          PAYLOAD="{\"text\":\"$TEXT\n$DETAILS\"}"
-
-          curl -X POST \
-            -H "Content-Type: application/json" \
-            -d "$PAYLOAD" \
-            "${{ secrets.TEAMS_WEBHOOK_URL }}"
+          curl -H "Content-Type: application/json" \
+          -d "$PAYLOAD" \
+          ${{ secrets.TEAMS_WEBHOOK_URL }}
