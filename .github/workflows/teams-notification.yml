@@ -6,9 +6,9 @@ on:
   pull_request_review:
     types: [submitted]
   push:
-    # Restricts push notifications strictly to 'main'
+    # Captures pushes to main AND any other branch
     branches:
-      - "main"
+      - "**" 
   create:
 
 jobs:
@@ -24,7 +24,38 @@ jobs:
           TEXT=""
           DETAILS=""
 
-          if [ "$EVENT" = "pull_request" ]; then
+          # 1. Handle Branch Creation vs Code Updates
+          if [ "$EVENT" = "create" ]; then
+            if [ "${{ github.event.ref_type }}" = "branch" ]; then
+              TEXT="New Branch Created: ${{ github.ref_name }}"
+              DETAILS="Repo: ${{ github.repository }} | Created By: ${{ github.actor }}"
+            else
+              echo "Created resource is a tag. Skipping notification."
+              exit 0
+            fi
+
+          elif [ "$EVENT" = "push" ]; then
+            # Check if this push event was actually a branch creation event
+            # GitHub pushes payload contains 'created=true' on the first push
+            IS_NEW_BRANCH="${{ github.event.created }}"
+            
+            if [ "$IS_NEW_BRANCH" = "true" ]; then
+              echo "This push is a new branch creation. Handled by the 'create' event or captured here. Proceeding..."
+              TEXT="New Branch Pushed: ${{ github.ref_name }}"
+              DETAILS="Repo: ${{ github.repository }} | Pushed By: ${{ github.actor }}"
+            else
+              # Regular push updates (restrict to main or specific tracking branches if preferred)
+              if [ "${{ github.ref_name }}" = "main" ]; then
+                TEXT="Push to main branch"
+                DETAILS="Repo: ${{ github.repository }} | Commit: ${{ github.sha }} | By: ${{ github.actor }}"
+              else
+                echo "Regular push to feature branch '${{ github.ref_name }}'. Skipping notification."
+                exit 0
+              fi
+            fi
+
+          # 2. Handle Pull Requests
+          elif [ "$EVENT" = "pull_request" ]; then
             if [ "$ACTION" = "opened" ]; then
               TEXT="New Pull Request Opened"
             elif [ "$ACTION" = "reopened" ]; then
@@ -40,57 +71,44 @@ jobs:
             fi
             DETAILS="Repo: ${{ github.repository }} | Title: ${{ github.event.pull_request.title }} | Author: ${{ github.actor }}"
 
+          # 3. Handle Pull Request Reviews
           elif [ "$EVENT" = "pull_request_review" ]; then
             if [ "$REVIEW_STATE" = "approved" ]; then
               TEXT="Pull Request Approved"
               DETAILS="Repo: ${{ github.repository }} | Title: ${{ github.event.pull_request.title }} | Approved By: ${{ github.actor }}"
             else
-              echo "Review state is $REVIEW_STATE, not approved. Skipping notification."
-              exit 0
-            fi
-
-          elif [ "$EVENT" = "push" ]; then
-            TEXT="Push to ${{ github.ref_name }}"
-            DETAILS="Repo: ${{ github.repository }} | Commit: ${{ github.sha }}"
-
-          elif [ "$EVENT" = "create" ]; then
-            if [ "${{ github.event.ref_type }}" = "branch" ]; then
-              TEXT="New Branch Created: ${{ github.ref_name }}"
-              DETAILS="Repo: ${{ github.repository }} | Created By: ${{ github.actor }}"
-            else
-              echo "Created resource is a tag, not a branch. Skipping notification."
+              echo "Review state is $REVIEW_STATE, not approved. Skipping."
               exit 0
             fi
           fi
 
-          # Re-engineered payload to build a valid Microsoft Adaptive Card structure
+          # Safe fallback exit check
+          if [ -z "$TEXT" ]; then
+            echo "No conditions met. Skipping notification payload transmission."
+            exit 0
+          fi
+
+          # 4. Corrected Adaptive Card Structure for Power Automate Workflow Webhooks
           PAYLOAD=$(jq -n --arg text "$TEXT" --arg details "$DETAILS" '{
-            "type": "message",
-            "attachments": [
+            "type": "AdaptiveCard",
+            "body": [
               {
-                "contentType": "application/vnd.microsoft.card.adaptive",
-                "content": {
-                  "type": "AdaptiveCard",
-                  "body": [
-                    {
-                      "type": "TextBlock",
-                      "size": "Medium",
-                      "weight": "Bolder",
-                      "text": $text
-                    },
-                    {
-                      "type": "TextBlock",
-                      "text": $details,
-                      "wrap": true
-                    }
-                  ],
-                  "$schema": "http://adaptivecards.io",
-                  "version": "1.4"
-                }
+                "type": "TextBlock",
+                "size": "Medium",
+                "weight": "Bolder",
+                "text": $text
+              },
+              {
+                "type": "TextBlock",
+                "text": $details,
+                "wrap": true
               }
-            ]
+            ],
+            "$schema": "http://adaptivecards.io/schemas/adaptive-card.json",
+            "version": "1.4"
           }')
           
+          # Send the strict payload structure to Teams
           curl -H "Content-Type: application/json" \
                -d "$PAYLOAD" \
                "${{ secrets.TEAMS_WEBHOOK_URL }}"
