@@ -7,57 +7,53 @@ on:
     types: [submitted]
   push:
     branches:
-      - "**" 
+      - "**"
   create:
 
 jobs:
-  notify:
+  # JOB 1: Strictly intercepts branch creations (Both Local Push and GitHub UI)
+  notify-branch-creation:
     runs-on: ubuntu-latest
-
+    # Bulletproof condition: Fires if UI 'create' event OR if a push event has the native 'created' flag set to true
+    if: |
+      (github.event_name == 'create' && github.event.ref_type == 'branch') ||
+      (github.event_name == 'push' && github.event.created == true)
     steps:
-      - name: Send Teams notification
+      - name: Send Branch Creation Notification
+        run: |
+          TEXT="New Branch Created"
+          DETAILS="Repo: ${{ github.repository }} | Branch: ${{ github.ref_name }} | Created By: ${{ github.actor }}"
+          
+          PAYLOAD=$(jq -n --arg text "$TEXT" --arg details "$DETAILS" '{
+            "type": "AdaptiveCard",
+            "body": [
+              { "type": "TextBlock", "size": "Medium", "weight": "Bolder", "text": $text },
+              { "type": "TextBlock", "text": $details, "wrap": true }
+            ],
+            "$schema": "http://adaptivecards.io",
+            "version": "1.4"
+          }')
+          
+          curl -H "Content-Type: application/json" -d "$PAYLOAD" "${{ secrets.TEAMS_WEBHOOK_URL }}"
+
+  # JOB 2: Intercepts Pull Requests, Reviews, and standard Commits (Excludes creations)
+  notify-standard-events:
+    runs-on: ubuntu-latest
+    # Bulletproof condition: Only runs if it is NOT a branch creation event
+    if: |
+      github.event_name == 'pull_request' || 
+      github.event_name == 'pull_request_review' || 
+      (github.event_name == 'push' && github.event.created == false)
+    steps:
+      - name: Send Standard Event Notification
         run: |
           EVENT="${{ github.event_name }}"
           ACTION="${{ github.event.action }}"
           REVIEW_STATE="${{ github.event.review.state }}"
-          
-          # Extracts critical indicators from the GitHub Webhook Payload
-          IS_NEW_BRANCH="${{ env.TRACK_CREATION }}"
-          BEFORE_SHA="${{ env.BEFORE_COMMIT_SHA }}"
-          REF_NAME="${{ github.ref_name }}"
-          
           TEXT=""
           DETAILS=""
 
-          # 1. Catch Web-Based Branch Creation 
-          if [ "$EVENT" = "create" ]; then
-            if [ "${{ github.event.ref_type }}" = "branch" ]; then
-              TEXT="New Branch Created"
-              DETAILS="Repo: ${{ github.repository }} | Branch: $REF_NAME | Created By: ${{ github.actor }}"
-            else
-              echo "Created resource is a tag. Skipping notification."
-              exit 0
-            fi
-
-          # 2. Catch Local Branch Creation Pushed to Remote
-          elif [ "$EVENT" = "push" ]; then
-            # A completely new branch has no 'before' commit history (resolves to all zeros)
-            if [ "$IS_NEW_BRANCH" = "true" ] || [ "$BEFORE_SHA" = "0000000000000000000000000000000000000000" ]; then
-              TEXT="New Branch Created"
-              DETAILS="Repo: ${{ github.repository }} | Branch: $REF_NAME | Created By: ${{ github.actor }}"
-            else
-              # Regular commits strictly to main branch
-              if [ "$REF_NAME" = "main" ]; then
-                TEXT="Push to main branch"
-                DETAILS="Repo: ${{ github.repository }} | Commit: ${{ github.sha }} | By: ${{ github.actor }}"
-              else
-                echo "Regular code push to feature branch '$REF_NAME'. Skipping notification."
-                exit 0
-              fi
-            fi
-
-          # 3. Handle Pull Requests
-          elif [ "$EVENT" = "pull_request" ]; then
+          if [ "$EVENT" = "pull_request" ]; then
             if [ "$ACTION" = "opened" ]; then
               TEXT="New Pull Request Opened"
             elif [ "$ACTION" = "reopened" ]; then
@@ -73,46 +69,39 @@ jobs:
             fi
             DETAILS="Repo: ${{ github.repository }} | Title: ${{ github.event.pull_request.title }} | Author: ${{ github.actor }}"
 
-          # 4. Handle Pull Request Reviews
           elif [ "$EVENT" = "pull_request_review" ]; then
             if [ "$REVIEW_STATE" = "approved" ]; then
               TEXT="Pull Request Approved"
               DETAILS="Repo: ${{ github.repository }} | Title: ${{ github.event.pull_request.title }} | Approved By: ${{ github.actor }}"
             else
-              echo "Review state is $REVIEW_STATE, not approved. Skipping."
+              echo "Review state is $REVIEW_STATE. Skipping."
+              exit 0
+            fi
+
+          elif [ "$EVENT" = "push" ]; then
+            # Because of the job filter, this safely applies ONLY to standard modifications to main
+            if [ "${{ github.ref_name }}" = "main" ]; then
+              TEXT="Push to main branch"
+              DETAILS="Repo: ${{ github.repository }} | Commit: ${{ github.sha }} | By: ${{ github.actor }}"
+            else
+              echo "Standard push to feature branch. Skipping notification."
               exit 0
             fi
           fi
 
-          # Safe fallback exit check
           if [ -z "$TEXT" ]; then
-            echo "No conditions met. Skipping payload transmission."
+            echo "No notification strings set. Skipping target."
             exit 0
           fi
 
-          # 5. Build Adaptive Card Structure
           PAYLOAD=$(jq -n --arg text "$TEXT" --arg details "$DETAILS" '{
             "type": "AdaptiveCard",
             "body": [
-              {
-                "type": "TextBlock",
-                "size": "Medium",
-                "weight": "Bolder",
-                "text": $text
-              },
-              {
-                "type": "TextBlock",
-                "text": $details,
-                "wrap": true
-              }
+              { "type": "TextBlock", "size": "Medium", "weight": "Bolder", "text": $text },
+              { "type": "TextBlock", "text": $details, "wrap": true }
             ],
             "$schema": "http://adaptivecards.io",
             "version": "1.4"
           }')
           
-          curl -H "Content-Type: application/json" \
-               -d "$PAYLOAD" \
-               "${{ secrets.TEAMS_WEBHOOK_URL }}"
-        env:
-          TRACK_CREATION: ${{ format('{0}', github.event.created) }}
-          BEFORE_COMMIT_SHA: ${{ format('{0}', github.event.before) }}
+          curl -H "Content-Type: application/json" -d "$PAYLOAD" "${{ secrets.TEAMS_WEBHOOK_URL }}"
