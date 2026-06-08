@@ -6,6 +6,7 @@ on:
   pull_request_review:
     types: [submitted]
   push:
+    # Restricts push notifications strictly to 'main'
     branches:
       - "main"
   create:
@@ -40,7 +41,6 @@ jobs:
             DETAILS="Repo: ${{ github.repository }} | Title: ${{ github.event.pull_request.title }} | Author: ${{ github.actor }}"
 
           elif [ "$EVENT" = "pull_request_review" ]; then
-            # Only send notification if the review is an approval
             if [ "$REVIEW_STATE" = "approved" ]; then
               TEXT="Pull Request Approved"
               DETAILS="Repo: ${{ github.repository }} | Title: ${{ github.event.pull_request.title }} | Approved By: ${{ github.actor }}"
@@ -54,7 +54,6 @@ jobs:
             DETAILS="Repo: ${{ github.repository }} | Commit: ${{ github.sha }}"
 
           elif [ "$EVENT" = "create" ]; then
-            # Verify the created resource is a branch, not a tag
             if [ "${{ github.event.ref_type }}" = "branch" ]; then
               TEXT="New Branch Created: ${{ github.ref_name }}"
               DETAILS="Repo: ${{ github.repository }} | Created By: ${{ github.actor }}"
@@ -92,7 +91,6 @@ jobs:
             ]
           }')
           
-          # Send the final payload to your Microsoft Teams Webhook
           curl -H "Content-Type: application/json" \
                -d "$PAYLOAD" \
                "${{ secrets.TEAMS_WEBHOOK_URL }}"
