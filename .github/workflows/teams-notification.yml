@@ -6,7 +6,6 @@ on:
   pull_request_review:
     types: [submitted]
   push:
-    # Must monitor all branches so local pushes are evaluated
     branches:
       - "**" 
   create:
@@ -21,10 +20,14 @@ jobs:
           EVENT="${{ github.event_name }}"
           ACTION="${{ github.event.action }}"
           REVIEW_STATE="${{ github.event.review.state }}"
+          
+          
+          IS_NEW_BRANCH="${{ env.TRACK_CREATION }}"
+          
           TEXT=""
           DETAILS=""
 
-          # Catch Web-Based Branch Creation 
+          # 1. Catch Web-Based Branch Creation 
           if [ "$EVENT" = "create" ]; then
             if [ "${{ github.event.ref_type }}" = "branch" ]; then
               TEXT="New Branch Created (UI): ${{ github.ref_name }}"
@@ -34,15 +37,13 @@ jobs:
               exit 0
             fi
 
-          # Catch Local Branch Creation Pushed to Remote
+          # 2. Catch Local Branch Creation Pushed to Remote
           elif [ "$EVENT" = "push" ]; then
-            IS_NEW_BRANCH="${{ github.event.created }}"
-            
             if [ "$IS_NEW_BRANCH" = "true" ]; then
               TEXT="New Branch Created (Local Push): ${{ github.ref_name }}"
               DETAILS="Repo: ${{ github.repository }} | Created By: ${{ github.actor }}"
             else
-              # Regular commits to main branch
+              # Regular commits strictly to main branch
               if [ "${{ github.ref_name }}" = "main" ]; then
                 TEXT="Push to main branch"
                 DETAILS="Repo: ${{ github.repository }} | Commit: ${{ github.sha }} | By: ${{ github.actor }}"
@@ -52,7 +53,7 @@ jobs:
               fi
             fi
 
-          # Handle Pull Requests
+          # 3. Handle Pull Requests
           elif [ "$EVENT" = "pull_request" ]; then
             if [ "$ACTION" = "opened" ]; then
               TEXT="New Pull Request Opened"
@@ -69,7 +70,7 @@ jobs:
             fi
             DETAILS="Repo: ${{ github.repository }} | Title: ${{ github.event.pull_request.title }} | Author: ${{ github.actor }}"
 
-          # Handle Pull Request Reviews
+          # 4. Handle Pull Request Reviews
           elif [ "$EVENT" = "pull_request_review" ]; then
             if [ "$REVIEW_STATE" = "approved" ]; then
               TEXT="Pull Request Approved"
@@ -86,7 +87,7 @@ jobs:
             exit 0
           fi
 
-          # Build Adaptive Card Structure
+          # 5. Build Adaptive Card Structure
           PAYLOAD=$(jq -n --arg text "$TEXT" --arg details "$DETAILS" '{
             "type": "AdaptiveCard",
             "body": [
@@ -109,3 +110,6 @@ jobs:
           curl -H "Content-Type: application/json" \
                -d "$PAYLOAD" \
                "${{ secrets.TEAMS_WEBHOOK_URL }}"
+        env:
+          # Maps the raw boolean value to a clear string context token
+          TRACK_CREATION: ${{ format('{0}', github.event.created) }}
