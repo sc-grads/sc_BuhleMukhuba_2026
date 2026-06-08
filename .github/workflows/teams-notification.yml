@@ -21,8 +21,10 @@ jobs:
           ACTION="${{ github.event.action }}"
           REVIEW_STATE="${{ github.event.review.state }}"
           
-          
+          # Extracts critical indicators from the GitHub Webhook Payload
           IS_NEW_BRANCH="${{ env.TRACK_CREATION }}"
+          BEFORE_SHA="${{ env.BEFORE_COMMIT_SHA }}"
+          REF_NAME="${{ github.ref_name }}"
           
           TEXT=""
           DETAILS=""
@@ -30,8 +32,8 @@ jobs:
           # 1. Catch Web-Based Branch Creation 
           if [ "$EVENT" = "create" ]; then
             if [ "${{ github.event.ref_type }}" = "branch" ]; then
-              TEXT="New Branch Created (UI): ${{ github.ref_name }}"
-              DETAILS="Repo: ${{ github.repository }} | Created By: ${{ github.actor }}"
+              TEXT="New Branch Created"
+              DETAILS="Repo: ${{ github.repository }} | Branch: $REF_NAME | Created By: ${{ github.actor }}"
             else
               echo "Created resource is a tag. Skipping notification."
               exit 0
@@ -39,16 +41,17 @@ jobs:
 
           # 2. Catch Local Branch Creation Pushed to Remote
           elif [ "$EVENT" = "push" ]; then
-            if [ "$IS_NEW_BRANCH" = "true" ]; then
-              TEXT="New Branch Created (Local Push): ${{ github.ref_name }}"
-              DETAILS="Repo: ${{ github.repository }} | Created By: ${{ github.actor }}"
+            # A completely new branch has no 'before' commit history (resolves to all zeros)
+            if [ "$IS_NEW_BRANCH" = "true" ] || [ "$BEFORE_SHA" = "0000000000000000000000000000000000000000" ]; then
+              TEXT="New Branch Created"
+              DETAILS="Repo: ${{ github.repository }} | Branch: $REF_NAME | Created By: ${{ github.actor }}"
             else
               # Regular commits strictly to main branch
-              if [ "${{ github.ref_name }}" = "main" ]; then
+              if [ "$REF_NAME" = "main" ]; then
                 TEXT="Push to main branch"
                 DETAILS="Repo: ${{ github.repository }} | Commit: ${{ github.sha }} | By: ${{ github.actor }}"
               else
-                echo "Regular code push to feature branch '${{ github.ref_name }}'. Skipping notification."
+                echo "Regular code push to feature branch '$REF_NAME'. Skipping notification."
                 exit 0
               fi
             fi
@@ -111,5 +114,5 @@ jobs:
                -d "$PAYLOAD" \
                "${{ secrets.TEAMS_WEBHOOK_URL }}"
         env:
-          # Maps the raw boolean value to a clear string context token
           TRACK_CREATION: ${{ format('{0}', github.event.created) }}
+          BEFORE_COMMIT_SHA: ${{ format('{0}', github.event.before) }}
