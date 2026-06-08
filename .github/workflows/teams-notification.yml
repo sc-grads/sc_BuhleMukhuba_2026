@@ -20,6 +20,7 @@ jobs:
           EVENT="${{ github.event_name }}"
           ACTION="${{ github.event.action }}"
           TEXT=""
+          DETAILS=""
 
           if [ "$EVENT" = "pull_request" ]; then
             if [ "$ACTION" = "opened" ]; then
@@ -54,7 +55,13 @@ jobs:
             DETAILS="Repo: ${{ github.repository }} | Commit: ${{ github.sha }}"
 
           elif [ "$EVENT" = "create" ]; then
-            TEXT="New Branch Created: ${{ github.ref_name }}"
+            TEXT="New Branch/Tag Created: ${{ github.ref_name }}"
+            DETAILS="Repo: ${{ github.repository }} | Created By: ${{ github.actor }}"
+          fi
+
+          # Prevent empty payloads if an unhandled edge case occurs
+          if [ -z "$TEXT" ]; then
+            TEXT="GitHub Event: $EVENT"
             DETAILS="Repo: ${{ github.repository }}"
           fi
 
