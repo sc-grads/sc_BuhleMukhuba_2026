@@ -2,7 +2,9 @@ name: GitHub to Teams Notifications
 
 on:
   pull_request:
-    types: [opened, reopened, closed, synchronize]
+    types: [opened, reopened, closed, synchronize, review_requested]
+  pull_request_review:
+    types: [submitted]
   push:
     branches:
       - "main"
@@ -26,6 +28,8 @@ jobs:
               TEXT="Pull Request Reopened"
             elif [ "$ACTION" = "synchronize" ]; then
               TEXT="Pull Request Updated"
+            elif [ "$ACTION" = "review_requested" ]; then
+              TEXT="PR Approval/Review Requested"
             elif [ "$ACTION" = "closed" ]; then
               if [ "${{ github.event.pull_request.merged }}" = "true" ]; then
                 TEXT="Pull Request Merged into main"
@@ -34,6 +38,16 @@ jobs:
               fi
             fi
             DETAILS="Repo: ${{ github.repository }} | Title: ${{ github.event.pull_request.title }} | Author: ${{ github.actor }}"
+
+          elif [ "$EVENT" = "pull_request_review" ]; then
+            REVIEW_STATE="${{ github.event.review.state }}"
+            if [ "$REVIEW_STATE" = "approved" ]; then
+              TEXT="Pull Request Approved"
+              DETAILS="Repo: ${{ github.repository }} | Title: ${{ github.event.pull_request.title }} | Reviewer: ${{ github.actor }}"
+            else
+              # Ignore other review states (like comments or changes requested) if you only want approvals
+              exit 0
+            fi
 
           elif [ "$EVENT" = "push" ]; then
             TEXT="Push to ${{ github.ref_name }}"
