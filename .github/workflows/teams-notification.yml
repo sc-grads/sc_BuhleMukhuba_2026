@@ -44,7 +44,7 @@ jobs:
             DETAILS="Repo: ${{ github.repository }}"
           fi
 
-          # FIX 1: Generate valid O365 Message Card JSON format
+          # Generate valid O365 Message Card JSON format
           PAYLOAD=$(jq -n \
             --arg summary "$TEXT" \
             --arg title "$TEXT" \
@@ -57,7 +57,7 @@ jobs:
               "text": $text
             }')
 
-          # FIX 2: Wrapped the webhook URL in double quotes to prevent shell parsing errors
+          # Wrapped the webhook URL in double quotes to prevent shell parsing errors
           curl -H "Content-Type: application/json" \
           -d "$PAYLOAD" \
           "${{ secrets.TEAMS_WEBHOOK_URL }}"
