@@ -1,0 +1,28 @@
+name: Deploy Database
+ 
+on:
+  push:
+    branches:
+      - main
+ 
+jobs:
+  deploy:
+    runs-on: windows-latest
+ 
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+ 
+      - name: Install SQLCMD
+        uses: potatoqualitee/mssqlsuite@v1.7
+ 
+      - name: Execute SQL Script
+        shell: powershell
+        run: |
+          sqlcmd `
+            -S "${{ secrets.TUNNEL_URL }}" `
+            -d "${{ secrets.SQL_DATABASE }}" `
+            -U "${{ secrets.SQL_USERNAME }}" `
+            -P "${{ secrets.SQL_PASSWORD }}" `
+            -C `
+            -i "database/deploy.sql"
