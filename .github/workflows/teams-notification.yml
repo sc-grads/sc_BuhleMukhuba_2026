@@ -67,7 +67,7 @@ jobs:
             REF="${{ github.event.ref }}"
 
             if [ "$REF_TYPE" != "branch" ]; then
-              echo "Not a branch creation. Skipping."
+              echo "Not a branch creation. Skipping notification."
               exit 0
             fi
 
@@ -103,6 +103,15 @@ jobs:
             ]
           }')
 
+        
+          WEBHOOK_URL="${{ secrets.TEAMS_WEBHOOK_URL }}"
+          WEBHOOK_URL="$(echo -n "$WEBHOOK_URL" | tr -d '\r\n ')"
+
+          if [ -z "$WEBHOOK_URL" ]; then
+            echo "ERROR: TEAMS_WEBHOOK_URL secret is missing or empty"
+            exit 1
+          fi
+
           curl -H "Content-Type: application/json" \
                -d "$PAYLOAD" \
-               "${{ secrets.TEAMS_WEBHOOK_URL }}"
+               "$WEBHOOK_URL"
