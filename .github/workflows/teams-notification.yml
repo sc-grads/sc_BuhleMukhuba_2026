@@ -64,7 +64,7 @@ jobs:
             fi
           fi
 
-          # Re-engineered payload to build a valid Microsoft Adaptive Card structure
+          # Re-engineered payload mapping the Adaptive Card schema correctly
           PAYLOAD=$(jq -n --arg text "$TEXT" --arg details "$DETAILS" '{
             "type": "message",
             "attachments": [
@@ -72,6 +72,8 @@ jobs:
                 "contentType": "application/vnd.microsoft.card.adaptive",
                 "content": {
                   "type": "AdaptiveCard",
+                  "version": "1.4",
+                  "$schema": "http://adaptivecards.io/schemas/adaptive-card.json",
                   "body": [
                     {
                       "type": "TextBlock",
@@ -84,17 +86,13 @@ jobs:
                       "text": $details,
                       "wrap": true
                     }
-                  ],
-                  "$schema": "http://adaptivecards.io",
-                  "version": "1.4"
+                  ]
                 }
               }
             ]
           }')
           
-          # Send the final payload to your Microsoft Teams Webhook
+          # Send the verified payload payload to Microsoft Teams webhook
           curl -H "Content-Type: application/json" \
                -d "$PAYLOAD" \
                "${{ secrets.TEAMS_WEBHOOK_URL }}"
-
-
