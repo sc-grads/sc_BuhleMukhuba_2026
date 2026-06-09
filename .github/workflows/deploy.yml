@@ -16,7 +16,7 @@ jobs:
         shell: powershell
         run: |
           $payload = @{
-            text = "🚨 Database deployment approval required. Please approve the production deployment in GitHub."
+            text = "Database deployment approval required. Please approve the production deployment in GitHub."
           } | ConvertTo-Json
 
           Invoke-RestMethod `
