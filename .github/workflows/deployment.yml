@@ -13,8 +13,10 @@ jobs:
       - name: Checkout Repository
         uses: actions/checkout@v4
  
-      - name: Install SQLCMD
+      - name: Install SQLCMD Tools
         uses: potatoqualitee/mssqlsuite@v1.7
+        with:
+          install: sqlclient
  
       - name: Execute SQL Script
         shell: powershell
