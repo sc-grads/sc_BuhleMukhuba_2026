@@ -1,27 +1,20 @@
-on:
-  workflow_dispatch:   # Manual trigger from GitHub Actions tab
-  push:
-    branches:
-      - main           # Auto-trigger on push to main
-
 jobs:
   deploy-database:
     runs-on: windows-latest
+
+    environment:
+      name: production
 
     steps:
       - name: Checkout Code Repository
         uses: actions/checkout@v4
 
-      # ===============================
-      # 1. SEND TEAMS APPROVAL REQUEST
-      # ===============================
       - name: Send Teams Approval Request
         shell: powershell
         run: |
           $payload = @{
-            type = "message"
-            text = "🚨 Deployment Approval Required: Database deployment is ready. Please approve in GitHub Actions before continuing."
-          } | ConvertTo-Json -Depth 10
+            text = "Deployment awaiting approval in GitHub Environment: production"
+          } | ConvertTo-Json
 
           Invoke-RestMethod `
             -Uri "${{ secrets.TEAMS_WEBHOOK_URL }}" `
@@ -29,22 +22,6 @@ jobs:
             -Body $payload `
             -ContentType "application/json"
 
-      # ===============================
-      # 2. MANUAL APPROVAL GATE (PAUSE)
-      # ===============================
-      - name: Wait for Manual Approval
-        shell: powershell
-        run: |
-          if ("${{ github.event_name }}" -ne "workflow_dispatch") {
-            Write-Host "❌ Deployment paused. Manual approval required."
-            exit 1
-          }
-
-          Write-Host "✅ Approval received. Continuing deployment..."
-
-      # ===============================
-      # 3. EXECUTE SQL DEPLOYMENT
-      # ===============================
       - name: Execute SQL Script
         shell: powershell
         run: |
