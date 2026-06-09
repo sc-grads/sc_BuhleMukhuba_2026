@@ -64,27 +64,35 @@ jobs:
             fi
           fi
 
-          # Modern Teams Payload: Pure Root-Level Adaptive Card Object
+          # The Definitive MS Teams Workflow Payload Architecture
           PAYLOAD=$(jq -n --arg text "$TEXT" --arg details "$DETAILS" '{
-            "type": "AdaptiveCard",
-            "version": "1.4",
-            "$schema": "http://adaptivecards.io/schemas/adaptive-card.json",
-            "body": [
+            "type": "message",
+            "attachments": [
               {
-                "type": "TextBlock",
-                "size": "Medium",
-                "weight": "Bolder",
-                "text": $text
-              },
-              {
-                "type": "TextBlock",
-                "text": $details,
-                "wrap": true
+                "contentType": "application/vnd.microsoft.card.adaptive",
+                "content": {
+                  "type": "AdaptiveCard",
+                  "version": "1.4",
+                  "$schema": "http://adaptivecards.io",
+                  "body": [
+                    {
+                      "type": "TextBlock",
+                      "size": "Medium",
+                      "weight": "Bolder",
+                      "text": $text
+                    },
+                    {
+                      "type": "TextBlock",
+                      "text": $details,
+                      "wrap": true
+                    }
+                  ]
+                }
               }
             ]
           }')
           
-          # Send payload directly to the Microsoft Teams workflow URL
+          # Send the strict layout structure to Microsoft Teams
           curl -H "Content-Type: application/json" \
                -d "$PAYLOAD" \
                "${{ secrets.TEAMS_WEBHOOK_URL }}"
