@@ -21,4 +21,4 @@ jobs:
             -U "${{ secrets.SQL_USERNAME }}" `
             -P "${{ secrets.SQL_PASSWORD }}" `
             -C `
-            -i "database/deploy.sql"
+            -i "Automation Project/Deployment.sql"
