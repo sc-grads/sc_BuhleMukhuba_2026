@@ -1,45 +1,49 @@
+name: Database Deployment
+
+on:
+  push:
+    branches:
+      - main
+  workflow_dispatch:
+
 jobs:
 
-notify-approval:
-runs-on: windows-latest
+  notify-approval:
+    runs-on: windows-latest
 
-```
-steps:
-  - name: Send Teams Approval Request
-    shell: powershell
-    run: |
-      $payload = @{
-        text = "🚨 Database deployment approval required. Please review and approve the production deployment in GitHub."
-      } | ConvertTo-Json
+    steps:
+      - name: Send Teams Approval Request
+        shell: powershell
+        run: |
+          $payload = @{
+            text = "🚨 Database deployment approval required. Please approve the production deployment in GitHub."
+          } | ConvertTo-Json
 
-      Invoke-RestMethod `
-        -Uri "${{ secrets.TEAMS_WEBHOOK_URL }}" `
-        -Method Post `
-        -Body $payload `
-        -ContentType "application/json"
-```
+          Invoke-RestMethod `
+            -Uri "${{ secrets.TEAMS_WEBHOOK_URL }}" `
+            -Method Post `
+            -Body $payload `
+            -ContentType "application/json"
 
-deploy-database:
-needs: notify-approval
+  deploy-database:
+    needs: notify-approval
 
-```
-runs-on: windows-latest
+    runs-on: windows-latest
 
-environment:
-  name: production
+    environment:
+      name: production
 
-steps:
-  - name: Checkout Code Repository
-    uses: actions/checkout@v4
+    steps:
+      - name: Checkout Code Repository
+        uses: actions/checkout@v4
 
-  - name: Execute SQL Script
-    shell: powershell
-    run: |
-      sqlcmd `
-        -S "${{ secrets.TUNNEL_URL }}" `
-        -d "${{ secrets.SQL_DATABASE }}" `
-        -U "${{ secrets.SQL_USERNAME }}" `
-        -P "${{ secrets.SQL_PASSWORD }}" `
-        -C `
-        -i "Automation Project/Deployment.sql"
-```
+      - name: Execute SQL Script
+        shell: powershell
+        run: |
+          sqlcmd `
+            -S "${{ secrets.TUNNEL_URL }}" `
+            -d "${{ secrets.SQL_DATABASE }}" `
+            -U "${{ secrets.SQL_USERNAME }}" `
+            -P "${{ secrets.SQL_PASSWORD }}" `
+            -C `
+            -i "Automation Project/Deployment.sql"
