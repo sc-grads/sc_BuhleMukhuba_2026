@@ -14,7 +14,14 @@ jobs:
         shell: powershell
         run: |
           $payload = @{
-            text = "Database deployment approval required. Please review and approve the production deployment in GitHub."
+            text = @"
+Database deployment approval required.
+
+Creator: ${{ github.actor }}
+Reviewer: Pending Approval
+
+Please review and approve the production deployment in GitHub.
+"@
           } | ConvertTo-Json
 
           Invoke-RestMethod `
@@ -26,10 +33,31 @@ jobs:
   deploy-database:
     needs: notify-approval
     runs-on: windows-latest
+
     environment:
-      name: production # Ensure this environment in GitHub has "Required reviewers" enabled.
+      name: production
 
     steps:
+      - name: Notify Teams Approval Received
+        shell: powershell
+        run: |
+          $payload = @{
+            text = @"
+Deployment approval received.
+
+Creator: ${{ github.actor }}
+Reviewer: ${{ github.triggering_actor }}
+
+Database deployment is now starting.
+"@
+          } | ConvertTo-Json
+
+          Invoke-RestMethod `
+            -Uri "${{ secrets.TEAMS_WEBHOOK_URL }}" `
+            -Method Post `
+            -Body $payload `
+            -ContentType "application/json"
+
       - name: Checkout Code Repository
         uses: actions/checkout@v4
 
@@ -49,7 +77,12 @@ jobs:
         shell: powershell
         run: |
           $payload = @{
-            text = "Database deployment completed successfully!"
+            text = @"
+Database deployment completed successfully.
+
+Creator: ${{ github.actor }}
+Reviewer: ${{ github.triggering_actor }}
+"@
           } | ConvertTo-Json
 
           Invoke-RestMethod `
@@ -63,7 +96,14 @@ jobs:
         shell: powershell
         run: |
           $payload = @{
-            text = "Database deployment failed. Please check the GitHub Actions logs."
+            text = @"
+Database deployment failed.
+
+Creator: ${{ github.actor }}
+Reviewer: ${{ github.triggering_actor }}
+
+Please check the GitHub Actions logs.
+"@
           } | ConvertTo-Json
 
           Invoke-RestMethod `
