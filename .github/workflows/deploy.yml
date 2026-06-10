@@ -4,61 +4,99 @@ on:
   push:
     branches:
       - main
+      - staging
   workflow_dispatch:
 
 jobs:
 
-  notify-approval:
+  # ----------------------------
+  # STAGING DEPLOYMENT
+  # ----------------------------
+  deploy-staging:
+    if: github.ref == 'refs/heads/staging'
     runs-on: windows-latest
+    environment:
+      name: Shriya   # your staging environment
 
     steps:
-      - name: Send Teams Approval Request
+      - name: Checkout Code Repository
+        uses: actions/checkout@v4
+
+      - name: Notify Staging Deployment Start
         shell: powershell
         run: |
           $payload = @{
-            text = "Database deployment approval required.`nCreator: ${{ github.actor }}`nReviewer: ShriyaH15 Please approve in GitHub Environment: production"
+            text = "STAGING DEPLOYMENT STARTED`nCreator: ${{ github.actor }}"
           } | ConvertTo-Json
 
-          Invoke-RestMethod `
-            -Uri "${{ secrets.TEAMS_WEBHOOK_URL }}" `
-            -Method Post `
-            -Body $payload `
-            -ContentType "application/json"
+          Invoke-RestMethod -Uri "${{ secrets.TEAMS_WEBHOOK_URL }}" -Method Post -Body $payload -ContentType "application/json"
 
-  deploy-database:
-    needs: notify-approval
+      - name: Execute SQL Script (Staging)
+        shell: powershell
+        run: |
+          sqlcmd `
+            -S "${{ secrets.TUNNEL_URL }}" `
+            -d "${{ secrets.STAGING_DB }}" `
+            -U "${{ secrets.SQL_USERNAME }}" `
+            -P "${{ secrets.SQL_PASSWORD }}" `
+            -C `
+            -b `
+            -i "Automation Project/Deployment.sql"
+
+      - name: Notify Staging Success
+        if: success()
+        shell: powershell
+        run: |
+          $payload = @{
+            text = "STAGING DEPLOYMENT SUCCESSFUL`nCreator: ${{ github.actor }}"
+          } | ConvertTo-Json
+
+          Invoke-RestMethod -Uri "${{ secrets.TEAMS_WEBHOOK_URL }}" -Method Post -Body $payload -ContentType "application/json"
+
+      - name: Notify Staging Failure
+        if: failure()
+        shell: powershell
+        run: |
+          $payload = @{
+            text = "STAGING DEPLOYMENT FAILED`nCreator: ${{ github.actor }}"
+          } | ConvertTo-Json
+
+          Invoke-RestMethod -Uri "${{ secrets.TEAMS_WEBHOOK_URL }}" -Method Post -Body $payload -ContentType "application/json"
+
+
+  # ----------------------------
+  # PRODUCTION DEPLOYMENT
+  # ----------------------------
+  deploy-production:
+    if: github.ref == 'refs/heads/main'
     runs-on: windows-latest
 
     environment:
-      name: production, Shriya
+      name: production   # GitHub protected environment
 
     steps:
+      - name: Checkout Code Repository
+        uses: actions/checkout@v4
 
       - name: Notify Approval Received
         shell: powershell
         run: |
           $payload = @{
-            text = "Approval received from: Shriyah15.`nCreator: ${{ github.actor }}`nDeployment is starting now."
+            text = "PRODUCTION APPROVAL GRANTED`nCreator: ${{ github.actor }}`nDeployment starting..."
           } | ConvertTo-Json
 
-          Invoke-RestMethod `
-            -Uri "${{ secrets.TEAMS_WEBHOOK_URL }}" `
-            -Method Post `
-            -Body $payload `
-            -ContentType "application/json"
+          Invoke-RestMethod -Uri "${{ secrets.TEAMS_WEBHOOK_URL }}" -Method Post -Body $payload -ContentType "application/json"
 
-      - name: Checkout Code Repository
-        uses: actions/checkout@v4
-
-      - name: Execute SQL Script
+      - name: Execute SQL Script (Production)
         shell: powershell
         run: |
           sqlcmd `
             -S "${{ secrets.TUNNEL_URL }}" `
-            -d "master" `
+            -d "${{ secrets.PROD_DB }}" `
             -U "${{ secrets.SQL_USERNAME }}" `
             -P "${{ secrets.SQL_PASSWORD }}" `
             -C `
+            -b `
             -i "Automation Project/Deployment.sql"
 
       - name: Notify Teams on Success
@@ -66,25 +104,17 @@ jobs:
         shell: powershell
         run: |
           $payload = @{
-            text = "SUCCESS: Database deployment completed.`nCreator: ${{ github.actor }}"
+            text = "PRODUCTION DEPLOYMENT SUCCESSFUL`nCreator: ${{ github.actor }}"
           } | ConvertTo-Json
 
-          Invoke-RestMethod `
-            -Uri "${{ secrets.TEAMS_WEBHOOK_URL }}" `
-            -Method Post `
-            -Body $payload `
-            -ContentType "application/json"
+          Invoke-RestMethod -Uri "${{ secrets.TEAMS_WEBHOOK_URL }}" -Method Post -Body $payload -ContentType "application/json"
 
       - name: Notify Teams on Failure
         if: failure()
         shell: powershell
         run: |
           $payload = @{
-            text = "FAILED: Database deployment failed.`nCreator: ${{ github.actor }}"
+            text = "PRODUCTION DEPLOYMENT FAILED`nCreator: ${{ github.actor }}"
           } | ConvertTo-Json
 
-          Invoke-RestMethod `
-            -Uri "${{ secrets.TEAMS_WEBHOOK_URL }}" `
-            -Method Post `
-            -Body $payload `
-            -ContentType "application/json"
+          Invoke-RestMethod -Uri "${{ secrets.TEAMS_WEBHOOK_URL }}" -Method Post -Body $payload -ContentType "application/json"
