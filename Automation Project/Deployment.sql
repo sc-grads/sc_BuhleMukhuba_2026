@@ -44,6 +44,7 @@ BEGIN
         Email
     )
     VALUES
+    ('Buhle', 'Mukhuba', 'buhle.mukhuba@email.com'),
     ('John', 'Smith', 'john.smith@email.com'),
     ('Sarah', 'Jones', 'sarah.jones@email.com'),
     ('David', 'Brown', 'david.brown@email.com');
