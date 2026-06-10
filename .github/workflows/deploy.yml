@@ -15,20 +15,8 @@ jobs:
       - name: Send Teams Approval Request
         shell: powershell
         run: |
-          $workflowUrl = "${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}"
-
           $payload = @{
-            text = @"
-DATABASE DEPLOYMENT APPROVAL REQUIRED
-
-Repository: ${{ github.repository }}
-Created By: ${{ github.actor }}
-
-Approval Link:
-$workflowUrl
-
-Please review and approve this deployment in GitHub Environments.
-"@
+            text = "Database deployment approval required.`nCreator: ${{ github.actor }}`nReviewer: ShriyaH15 Please approve in GitHub Environment: production"
           } | ConvertTo-Json
 
           Invoke-RestMethod `
@@ -46,20 +34,11 @@ Please review and approve this deployment in GitHub Environments.
 
     steps:
 
-      - name: Notify Deployment Started (Post Approval)
+      - name: Notify Approval Received
         shell: powershell
         run: |
           $payload = @{
-            text = @"
-DEPLOYMENT APPROVED AND STARTED
-
-Repository: ${{ github.repository }}
-Requested By: ${{ github.actor }}
-
-Status: Approved via GitHub Environment
-
-Deployment is now in progress.
-"@
+            text = "Approval received from: Shriyah15.`nCreator: ${{ github.actor }}`nDeployment is starting now."
           } | ConvertTo-Json
 
           Invoke-RestMethod `
@@ -75,26 +54,19 @@ Deployment is now in progress.
         shell: powershell
         run: |
           sqlcmd `
-            -S "${{ secrets.PROJECT_URL }}" `
-            -d "${{ secrets.DATABASE_NAME }}" `
-            -U "${{ secrets.USER_NAME }}" `
-            -P "${{ secrets.PASSWORD_SQL }}" `
+            -S "${{ secrets.TUNNEL_URL }}" `
+            -d "${{ secrets.SQL_DATABASE }}" `
+            -U "${{ secrets.SQL_USERNAME }}" `
+            -P "${{ secrets.SQL_PASSWORD }}" `
             -C `
-            -i "SQL Project/deploy.sql"
+            -i "Automation Project/Deployment.sql"
 
       - name: Notify Teams on Success
         if: success()
         shell: powershell
         run: |
           $payload = @{
-            text = @"
-DEPLOYMENT SUCCESSFUL
-
-Repository: ${{ github.repository }}
-Requested By: ${{ github.actor }}
-
-Status: Completed successfully
-"@
+            text = "SUCCESS: Database deployment completed.`nCreator: ${{ github.actor }}"
           } | ConvertTo-Json
 
           Invoke-RestMethod `
@@ -108,14 +80,7 @@ Status: Completed successfully
         shell: powershell
         run: |
           $payload = @{
-            text = @"
-DEPLOYMENT FAILED
-
-Repository: ${{ github.repository }}
-Requested By: ${{ github.actor }}
-
-Status: Check GitHub Actions logs for details
-"@
+            text = "FAILED: Database deployment failed.`nCreator: ${{ github.actor }}"
           } | ConvertTo-Json
 
           Invoke-RestMethod `
