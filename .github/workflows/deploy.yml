@@ -54,12 +54,12 @@ jobs:
         shell: powershell
         run: |
           sqlcmd `
-            -S "${{ secrets.PROJECT_URL }}" `
-            -d "${{ secrets.DATABASE_NAME }}" `
-            -U "${{ secrets.USER_NAME }}" `
-            -P "${{ secrets.PASSWORD_SQL }}" `
+            -S "${{ secrets.TUNNEL_URL }}" `
+            -d "${{ secrets.SQL_DATABASE }}" `
+            -U "${{ secrets.SQL_USERNAME }}" `
+            -P "${{ secrets.SQL_PASSWORD }}" `
             -C `
-            -i "SQL Project/deploy.sql"
+            -i "Automation Project/Deployment.sql"
 
       - name: Notify Teams on Success
         if: success()
