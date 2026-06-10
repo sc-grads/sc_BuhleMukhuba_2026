@@ -4,50 +4,28 @@ on:
   push:
     branches:
       - main
-  workflow_dispatch:
+      - staging
 
 jobs:
-
-  notify-approval:
-    runs-on: windows-latest
-    strategy:
-      matrix:
-        env: [production, shriya]
-
-    steps:
-      - name: Send Teams Approval Request
-        shell: powershell
-        run: |
-          $payload = @{
-            text = "Database deployment approval required.`nEnvironment: ${{ matrix.env }}`nCreator: ${{ github.actor }}.`nApprove in GitHub Environment: ${{ matrix.env }}"
-          } | ConvertTo-Json
-
-          Invoke-RestMethod `
-            -Uri "${{ secrets.TEAMS_WEBHOOK_URL }}" `
-            -Method Post `
-            -Body $payload `
-            -ContentType "application/json"
-
   deploy-database:
-    needs: notify-approval
     runs-on: windows-latest
-    strategy:
-      matrix:
-        env: [production, shriya]
 
+    # Map branch → environment
     environment:
-      name: ${{ matrix.env }}
+      name: ${{ github.ref_name == 'main' && 'production' || 'shriya' }}
 
     steps:
 
-      - name: Checkout Code Repository
+      - name: Checkout Repository
         uses: actions/checkout@v4
 
-      - name: Notify Deployment Start
+      - name: Notify Start (Teams)
         shell: powershell
         run: |
+          $envName = "${{ github.ref_name == 'main' && 'production' || 'shriya' }}"
+
           $payload = @{
-            text = "Deployment starting.`nEnvironment: ${{ matrix.env }}`nCreator: ${{ github.actor }}"
+            text = "Database deployment starting.`nBranch: ${{ github.ref_name }}`nEnvironment: $envName`nUser: ${{ github.actor }}"
           } | ConvertTo-Json
 
           Invoke-RestMethod `
@@ -71,8 +49,10 @@ jobs:
         if: success()
         shell: powershell
         run: |
+          $envName = "${{ github.ref_name == 'main' && 'production' || 'shriya' }}"
+
           $payload = @{
-            text = "SUCCESS: Database deployment completed.`nEnvironment: ${{ matrix.env }}`nCreator: ${{ github.actor }}"
+            text = "SUCCESS: Deployment completed.`nBranch: ${{ github.ref_name }}`nEnvironment: $envName"
           } | ConvertTo-Json
 
           Invoke-RestMethod `
@@ -85,8 +65,10 @@ jobs:
         if: failure()
         shell: powershell
         run: |
+          $envName = "${{ github.ref_name == 'main' && 'production' || 'shriya' }}"
+
           $payload = @{
-            text = "FAILED: Database deployment failed.`nEnvironment: ${{ matrix.env }}`nCreator: ${{ github.actor }}"
+            text = "FAILED: Deployment failed.`nBranch: ${{ github.ref_name }}`nEnvironment: $envName"
           } | ConvertTo-Json
 
           Invoke-RestMethod `
