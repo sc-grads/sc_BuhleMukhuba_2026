@@ -21,7 +21,7 @@ jobs:
           if ("${{ github.ref_name }}" -eq "main") {
             echo "ENV_NAME=production" >> $env:GITHUB_ENV
           } else {
-            echo "ENV_NAME=shriya" >> $env:GITHUB_ENV
+            echo "ENV_NAME=Shriya" >> $env:GITHUB_ENV
           }
 
       - name: Checkout Repository
