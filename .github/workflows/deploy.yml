@@ -1,157 +1,73 @@
 name: Database Deployment
 
 on:
-push:
-branches:
-- main
-workflow_dispatch:
+  push:
+    branches:
+      - main
+  workflow_dispatch:
 
 jobs:
+  notify-approval:
+    runs-on: windows-latest
+    steps:
+      - name: Send Teams Approval Request
+        shell: powershell
+        run: |
+          $payload = @{
+            text = "Database deployment approval required. Please review and approve the production deployment in GitHub."
+          } | ConvertTo-Json
 
-notify-approval:
-runs-on: windows-latest
+          Invoke-RestMethod `
+            -Uri "${{ secrets.TEAMS_WEBHOOK_URL }}" `
+            -Method Post `
+            -Body $payload `
+            -ContentType "application/json"
 
-```
-steps:
-  - name: Send Approval Request Notification
-    shell: powershell
-    run: |
-      $workflowUrl = "${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}"
+  deploy-database:
+    needs: notify-approval
+    runs-on: windows-latest
+    environment:
+      name: production # Ensure this environment in GitHub has "Required reviewers" enabled.
 
-      $payload = @{
-          text = @"
-```
+    steps:
+      - name: Checkout Code Repository
+        uses: actions/checkout@v4
 
-DATABASE DEPLOYMENT APPROVAL REQUIRED
+      - name: Execute SQL Script
+        shell: powershell
+        run: |
+          sqlcmd `
+            -S "${{ secrets.PROJECT_URL }}" `
+            -d "${{ secrets.DATABASE_NAME }}" `
+            -U "${{ secrets.USER_NAME }}" `
+            -P "${{ secrets.PASSWORD_SQL }}" `
+            -C `
+            -i "SQL Project/deploy.sql"
 
-Repository: ${{ github.repository }}
-Requested By: ${{ github.actor }}
+      - name: Notify Teams on Success
+        if: success()
+        shell: powershell
+        run: |
+          $payload = @{
+            text = "Database deployment completed successfully!"
+          } | ConvertTo-Json
 
-Review Deployment:
-$workflowUrl
-"@
-} | ConvertTo-Json
+          Invoke-RestMethod `
+            -Uri "${{ secrets.TEAMS_WEBHOOK_URL }}" `
+            -Method Post `
+            -Body $payload `
+            -ContentType "application/json"
 
-```
-      Invoke-RestMethod `
-        -Uri "${{ secrets.TEAMS_WEBHOOK_URL }}" `
-        -Method Post `
-        -Body $payload `
-        -ContentType "application/json"
-```
+      - name: Notify Teams on Failure
+        if: failure()
+        shell: powershell
+        run: |
+          $payload = @{
+            text = "Database deployment failed. Please check the GitHub Actions logs."
+          } | ConvertTo-Json
 
-deploy-database:
-needs: notify-approval
-
-```
-runs-on: windows-latest
-
-environment:
-  name: production
-
-steps:
-
-  - name: Notify Approval Received
-    shell: powershell
-    run: |
-      $payload = @{
-          text = @"
-```
-
-DEPLOYMENT APPROVED
-
-Repository: ${{ github.repository }}
-Requested By: ${{ github.actor }}
-
-Approval received.
-Database deployment is starting.
-"@
-} | ConvertTo-Json
-
-```
-      Invoke-RestMethod `
-        -Uri "${{ secrets.TEAMS_WEBHOOK_URL }}" `
-        -Method Post `
-        -Body $payload `
-        -ContentType "application/json"
-
-  - name: Checkout Code Repository
-    uses: actions/checkout@v4
-
-  - name: Execute SQL Script
-    shell: powershell
-    run: |
-      sqlcmd `
-        -S "${{ secrets.TUNNEL_URL }}" `
-        -d "${{ secrets.SQL_DATABASE }}" `
-        -U "${{ secrets.SQL_USERNAME }}" `
-        -P "${{ secrets.SQL_PASSWORD }}" `
-        -C `
-        -i "Automation Project/Deployment.sql"
-```
-
-notify-success:
-needs: deploy-database
-
-```
-if: success()
-
-runs-on: windows-latest
-
-steps:
-  - name: Notify Deployment Success
-    shell: powershell
-    run: |
-      $payload = @{
-          text = @"
-```
-
-✅ DATABASE DEPLOYMENT SUCCESSFUL
-
-Repository: ${{ github.repository }}
-Requested By: ${{ github.actor }}
-
-Deployment completed successfully.
-"@
-} | ConvertTo-Json
-
-```
-      Invoke-RestMethod `
-        -Uri "${{ secrets.TEAMS_WEBHOOK_URL }}" `
-        -Method Post `
-        -Body $payload `
-        -ContentType "application/json"
-```
-
-notify-failure:
-needs: deploy-database
-
-```
-if: failure()
-
-runs-on: windows-latest
-
-steps:
-  - name: Notify Deployment Failure
-    shell: powershell
-    run: |
-      $payload = @{
-          text = @"
-```
-
-DATABASE DEPLOYMENT FAILED
-
-Repository: ${{ github.repository }}
-Requested By: ${{ github.actor }}
-
-Review the GitHub Actions logs for more details.
-"@
-} | ConvertTo-Json
-
-```
-      Invoke-RestMethod `
-        -Uri "${{ secrets.TEAMS_WEBHOOK_URL }}" `
-        -Method Post `
-        -Body $payload `
-        -ContentType "application/json"
-```
+          Invoke-RestMethod `
+            -Uri "${{ secrets.TEAMS_WEBHOOK_URL }}" `
+            -Method Post `
+            -Body $payload `
+            -ContentType "application/json"
