@@ -5,29 +5,36 @@ on:
     branches:
       - main
       - staging
-      
-  workflow_dispatch: 
+
+  workflow_dispatch:
 
 jobs:
+
   deploy-database:
     runs-on: windows-latest
 
-    # Map branch → environment
     environment:
       name: ${{ github.ref_name == 'main' && 'production' || 'shriya' }}
 
     steps:
 
-      - name: Checkout Repository
-        uses: actions/checkout@v4
-
-      - name: Notify Start (Teams)
+      - name: Determine Environment
+        id: env
         shell: powershell
         run: |
-          $envName = "${{ github.ref_name == 'main' && 'production' || 'shriya' }}"
+          if ("${{ github.ref_name }}" -eq "main") {
+            echo "ENV_NAME=production" >> $env:GITHUB_OUTPUT
+          } else {
+            echo "ENV_NAME=shriya" >> $env:GITHUB_OUTPUT
+          }
+
+      - name: Send Approval Request Notification (Teams)
+        shell: powershell
+        run: |
+          $envName = "${{ steps.env.outputs.ENV_NAME }}"
 
           $payload = @{
-            text = "Database deployment starting.`nBranch: ${{ github.ref_name }}`nEnvironment: $envName`nUser: ${{ github.actor }}"
+            text = "APPROVAL REQUIRED Branch: ${{ github.ref_name }}`nEnvironment: $envName`nRequested by: ${{ github.actor }}`nApprove via GitHub Environments before deployment continues."
           } | ConvertTo-Json
 
           Invoke-RestMethod `
@@ -35,6 +42,13 @@ jobs:
             -Method Post `
             -Body $payload `
             -ContentType "application/json"
+
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      # THIS IS WHERE GITHUB PAUSES FOR APPROVAL (if configured)
+      - name: Wait for GitHub Environment Approval
+        run: echo "Waiting for environment approval..."
 
       - name: Execute SQL Script
         shell: powershell
@@ -54,7 +68,7 @@ jobs:
           $envName = "${{ github.ref_name == 'main' && 'production' || 'shriya' }}"
 
           $payload = @{
-            text = "SUCCESS: Deployment completed.`nBranch: ${{ github.ref_name }}`nEnvironment: $envName"
+            text = "SUCCESS Branch: ${{ github.ref_name }}`nEnvironment: $envName"
           } | ConvertTo-Json
 
           Invoke-RestMethod `
@@ -70,7 +84,7 @@ jobs:
           $envName = "${{ github.ref_name == 'main' && 'production' || 'shriya' }}"
 
           $payload = @{
-            text = "FAILED: Deployment failed.`nBranch: ${{ github.ref_name }}`nEnvironment: $envName"
+            text = "FAILED Branch: ${{ github.ref_name }}`nEnvironment: $envName"
           } | ConvertTo-Json
 
           Invoke-RestMethod `
