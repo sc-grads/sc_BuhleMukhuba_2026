@@ -51,7 +51,7 @@ jobs:
         run: |
           sqlcmd `
             -S "${{ secrets.TUNNEL_URL }}" `
-            -d "master" `
+            -d "${{ secrets.SQL_DATABASE}}" `
             -U "${{ secrets.SQL_USERNAME }}" `
             -P "${{ secrets.SQL_PASSWORD }}" `
             -C `
