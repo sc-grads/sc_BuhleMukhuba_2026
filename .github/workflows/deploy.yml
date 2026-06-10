@@ -5,6 +5,8 @@ on:
     branches:
       - main
       - staging
+      
+  workflow_dispatch: 
 
 jobs:
   deploy-database:
