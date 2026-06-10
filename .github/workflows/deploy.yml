@@ -29,10 +29,6 @@ jobs:
     needs: notify-approval
     runs-on: windows-latest
 
-    environment:
-      name: "production, Buhle"
-      
-
     steps:
 
       - name: Notify Approval Received
