@@ -14,7 +14,7 @@ jobs:
     runs-on: windows-latest
 
     environment:
-      name: ${{ github.ref_name == 'main' && 'production' || 'shriya' }}
+      name: ${{ github.ref_name == 'main' && 'production' || 'Shriya' }}
 
     steps:
 
@@ -28,7 +28,7 @@ jobs:
           if ("${{ github.ref_name }}" -eq "main") {
             echo "ENV_NAME=production" >> $env:GITHUB_OUTPUT
           } else {
-            echo "ENV_NAME=shriya" >> $env:GITHUB_OUTPUT
+            echo "ENV_NAME=Shriya" >> $env:GITHUB_OUTPUT
           }
 
       - name: Send Approval Request Notification (Teams)
@@ -37,7 +37,7 @@ jobs:
           $envName = "${{ steps.env.outputs.ENV_NAME }}"
 
           $payload = @{
-            text = "APPROVAL REQUIRED 🚨`nBranch: ${{ github.ref_name }}`nEnvironment: $envName`nPlease approve in GitHub Environments"
+            text = "APPROVAL REQUIRED Branch: ${{ github.ref_name }}`nEnvironment: $envName`nPlease approve in GitHub Environments"
           } | ConvertTo-Json
 
           Invoke-RestMethod `
