@@ -15,7 +15,7 @@ jobs:
 
     steps:
 
-      - name: Set Deployment Variables
+      - name: Set Environment
         shell: powershell
         run: |
           if ("${{ github.ref_name }}" -eq "main") {
@@ -40,23 +40,35 @@ jobs:
             -Body $payload `
             -ContentType "application/json"
 
-      - name: Execute SQL Script
+      - name: Execute SQL Script (Stable Method)
         shell: powershell
         run: |
-          sqlcmd `
-            -S "${{ secrets.TUNNEL_URL }}" `
-            -d "master" `
-            -U "${{ secrets.SQL_USERNAME }}" `
-            -P "${{ secrets.SQL_PASSWORD }}" `
-            -C `
-            -i "Automation Project/Deployment.sql"
+          $server = "${{ secrets.TUNNEL_URL }}"
+          $user = "${{ secrets.SQL_USERNAME }}"
+          $pass = "${{ secrets.SQL_PASSWORD }}"
+          $db = "master"
+
+          $sql = Get-Content "Automation Project/Deployment.sql" -Raw
+
+          $connString = "Server=$server;Database=$db;User ID=$user;Password=$pass;TrustServerCertificate=True;"
+
+          $conn = New-Object System.Data.SqlClient.SqlConnection
+          $conn.ConnectionString = $connString
+          $conn.Open()
+
+          $cmd = $conn.CreateCommand()
+          $cmd.CommandTimeout = 120
+          $cmd.CommandText = $sql
+          $cmd.ExecuteNonQuery()
+
+          $conn.Close()
 
       - name: Notify Success
         if: success()
         shell: powershell
         run: |
           $payload = @{
-            text = "SUCCESS Branch: ${{ github.ref_name }}`nEnvironment: $env:ENV_NAME"
+            text = "SUCCESS`nBranch: ${{ github.ref_name }}`nEnvironment: $env:ENV_NAME"
           } | ConvertTo-Json
 
           Invoke-RestMethod `
@@ -70,7 +82,7 @@ jobs:
         shell: powershell
         run: |
           $payload = @{
-            text = "FAILED Branch: ${{ github.ref_name }}`nEnvironment: $env:ENV_NAME"
+            text = "FAILED`nBranch: ${{ github.ref_name }}`nEnvironment: $env:ENV_NAME"
           } | ConvertTo-Json
 
           Invoke-RestMethod `
