@@ -1,5 +1,16 @@
+-- Check and create the database first
+IF NOT EXISTS (
+    SELECT name 
+    FROM sys.databases 
+    WHERE name = 'Cloud-Tunnels-BM'
+)
+BEGIN
+    CREATE DATABASE Cloud-Tunnels-BM;
+END
+GO
+
 -- Switch to the database
-USE [Cloud-Tunnels-BM];
+USE Cloud-Tunnels-BM;
 GO
  
 -- Create Employees table if it doesn't exist
@@ -42,3 +53,5 @@ GO
 -- Verify deployment
 SELECT * FROM Employees;
 GO
+
+
