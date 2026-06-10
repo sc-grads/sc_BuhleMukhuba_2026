@@ -12,9 +12,9 @@ jobs:
     runs-on: windows-latest
 
 environment:
-      name: "production, Buhle"
-      
-    steps:
+      name: production
+    
+steps:
       - name: Send Teams Approval Request
         shell: powershell
         run: |
