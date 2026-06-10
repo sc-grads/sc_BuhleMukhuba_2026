@@ -7,21 +7,16 @@ on:
   workflow_dispatch:
 
 jobs:
+
   notify-approval:
     runs-on: windows-latest
+
     steps:
       - name: Send Teams Approval Request
         shell: powershell
         run: |
           $payload = @{
-            text = @"
-Database deployment approval required.
-
-Creator: ${{ github.actor }}
-Reviewer: Pending Approval
-
-Please review and approve the production deployment in GitHub.
-"@
+            text = "Database deployment approval required.`nCreator: ${{ github.actor }}`nPlease approve in GitHub Environment: production"
           } | ConvertTo-Json
 
           Invoke-RestMethod `
@@ -38,18 +33,12 @@ Please review and approve the production deployment in GitHub.
       name: production
 
     steps:
-      - name: Notify Teams Approval Received
+
+      - name: Notify Approval Received
         shell: powershell
         run: |
           $payload = @{
-            text = @"
-Deployment approval received.
-
-Creator: ${{ github.actor }}
-Reviewer: ${{ github.triggering_actor }}
-
-Database deployment is now starting.
-"@
+            text = "Approval received.`nCreator: ${{ github.actor }}`nDeployment is starting now."
           } | ConvertTo-Json
 
           Invoke-RestMethod `
@@ -77,12 +66,7 @@ Database deployment is now starting.
         shell: powershell
         run: |
           $payload = @{
-            text = @"
-Database deployment completed successfully.
-
-Creator: ${{ github.actor }}
-Reviewer: ${{ github.triggering_actor }}
-"@
+            text = "SUCCESS: Database deployment completed.`nCreator: ${{ github.actor }}"
           } | ConvertTo-Json
 
           Invoke-RestMethod `
@@ -96,14 +80,7 @@ Reviewer: ${{ github.triggering_actor }}
         shell: powershell
         run: |
           $payload = @{
-            text = @"
-Database deployment failed.
-
-Creator: ${{ github.actor }}
-Reviewer: ${{ github.triggering_actor }}
-
-Please check the GitHub Actions logs.
-"@
+            text = "FAILED: Database deployment failed.`nCreator: ${{ github.actor }}"
           } | ConvertTo-Json
 
           Invoke-RestMethod `
