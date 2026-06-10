@@ -1,5 +1,5 @@
 -- Switch to the database
-USE AutomationDb;
+USE [Cloud-Tunnels-BM];
 GO
  
 -- Create Employees table if it doesn't exist
