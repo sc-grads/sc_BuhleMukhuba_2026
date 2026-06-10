@@ -10,16 +10,16 @@ jobs:
 
   notify-approval:
     runs-on: windows-latest
+    strategy:
+      matrix:
+        env: [production, shriya]
 
-environment:
-      name: production
-    
-steps:
+    steps:
       - name: Send Teams Approval Request
         shell: powershell
         run: |
           $payload = @{
-            text = "Database deployment approval required.`nCreator: ${{ github.actor }}`nPlease approve in GitHub Environment: production"
+            text = "Database deployment approval required.`nEnvironment: ${{ matrix.env }}`nCreator: ${{ github.actor }}.`nApprove in GitHub Environment: ${{ matrix.env }}"
           } | ConvertTo-Json
 
           Invoke-RestMethod `
@@ -31,14 +31,23 @@ steps:
   deploy-database:
     needs: notify-approval
     runs-on: windows-latest
+    strategy:
+      matrix:
+        env: [production, shriya]
+
+    environment:
+      name: ${{ matrix.env }}
 
     steps:
 
-      - name: Notify Approval Received
+      - name: Checkout Code Repository
+        uses: actions/checkout@v4
+
+      - name: Notify Deployment Start
         shell: powershell
         run: |
           $payload = @{
-            text = "Approval received.`nCreator: ${{ github.actor }}`nDeployment is starting now."
+            text = "Deployment starting.`nEnvironment: ${{ matrix.env }}`nCreator: ${{ github.actor }}"
           } | ConvertTo-Json
 
           Invoke-RestMethod `
@@ -46,9 +55,6 @@ steps:
             -Method Post `
             -Body $payload `
             -ContentType "application/json"
-
-      - name: Checkout Code Repository
-        uses: actions/checkout@v4
 
       - name: Execute SQL Script
         shell: powershell
@@ -61,12 +67,12 @@ steps:
             -C `
             -i "Automation Project/Deployment.sql"
 
-      - name: Notify Teams on Success
+      - name: Notify Success
         if: success()
         shell: powershell
         run: |
           $payload = @{
-            text = "SUCCESS: Database deployment completed.`nCreator: ${{ github.actor }}"
+            text = "SUCCESS: Database deployment completed.`nEnvironment: ${{ matrix.env }}`nCreator: ${{ github.actor }}"
           } | ConvertTo-Json
 
           Invoke-RestMethod `
@@ -75,12 +81,12 @@ steps:
             -Body $payload `
             -ContentType "application/json"
 
-      - name: Notify Teams on Failure
+      - name: Notify Failure
         if: failure()
         shell: powershell
         run: |
           $payload = @{
-            text = "FAILED: Database deployment failed.`nCreator: ${{ github.actor }}"
+            text = "FAILED: Database deployment failed.`nEnvironment: ${{ matrix.env }}`nCreator: ${{ github.actor }}"
           } | ConvertTo-Json
 
           Invoke-RestMethod `
