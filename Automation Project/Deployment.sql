@@ -1,5 +1,16 @@
+-- Check and create the database first
+IF NOT EXISTS (
+    SELECT name 
+    FROM sys.databases 
+    WHERE name = 'Cloud_Tunnels_BM'
+)
+BEGIN
+    CREATE DATABASE Cloud_Tunnels_BM
+END
+GO
+
 -- Switch to the database
-USE [Cloud-Tunnels-BM];
+USE Cloud_Tunnels_BM;
 GO
  
 -- Create Employees table if it doesn't exist
@@ -33,6 +44,7 @@ BEGIN
         Email
     )
     VALUES
+    ('Buhle', 'Mukhuba', 'buhle.mukhuba@email.com'),
     ('John', 'Smith', 'john.smith@email.com'),
     ('Sarah', 'Jones', 'sarah.jones@email.com'),
     ('David', 'Brown', 'david.brown@email.com');
