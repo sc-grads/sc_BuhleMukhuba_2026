@@ -1,0 +1,27 @@
+name: Database Deployment
+
+on:
+  push:
+    branches: ["main", "Staging"]
+
+  workflow_dispatch:
+
+jobs:
+
+  deploy-staging:
+    if: github.ref_name == 'Staging'
+    uses: ./.github/workflows/db-deploy-template.yml
+    with:
+      environment: Shriya
+      branch: Staging
+      require_approval: true
+    secrets: inherit
+
+  deploy-production:
+    if: github.ref_name == 'main'
+    uses: ./.github/workflows/db-deploy-template.yml
+    with:
+      environment: production
+      branch: main
+      require_approval: false
+    secrets: inherit
