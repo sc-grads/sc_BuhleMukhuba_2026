@@ -1,0 +1,86 @@
+name: Reusable Database Deployment Template
+
+on:
+  workflow_call:
+    inputs:
+      environment:
+        required: true
+        type: string
+      branch:
+        required: true
+        type: string
+      require_approval:
+        required: true
+        type: boolean
+
+jobs:
+
+  deploy:
+    runs-on: windows-latest
+
+    environment:
+      name: ${{ inputs.environment }}
+
+    steps:
+
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: Approval Notification (Only for Staging)
+        if: ${{ inputs.require_approval == true }}
+        shell: powershell
+        run: |
+          $timestamp = Get-Date -Format "yyyy-MM-dd HH:mm:ss"
+
+          $text = "DATABASE DEPLOYMENT - APPROVAL REQUIRED`n`nCreator: ${{ github.actor }}`nBranch: ${{ inputs.branch }}`nEnvironment: ${{ inputs.environment }}`nDate/Time: $timestamp`n`nPlease approve this deployment in GitHub Environments."
+
+          $payload = @{ text = $text } | ConvertTo-Json -Depth 1
+
+          Invoke-RestMethod `
+            -Uri "${{ secrets.TEAMS_WEBHOOK_URL }}" `
+            -Method Post `
+            -Body $payload `
+            -ContentType "application/json"
+
+      - name: Execute SQL Script
+        shell: powershell
+        run: |
+          sqlcmd `
+            -S "${{ secrets.TUNNEL_URL }}" `
+            -d "master" `
+            -U "${{ secrets.SQL_USERNAME }}" `
+            -P "${{ secrets.SQL_PASSWORD }}" `
+            -C `
+            -i "Automation Project/Deployment.sql"
+
+      - name: Success Notification
+        if: success()
+        shell: powershell
+        run: |
+          $timestamp = Get-Date -Format "yyyy-MM-dd HH:mm:ss"
+
+          $text = "DATABASE DEPLOYMENT - SUCCESS`n`nCreator: ${{ github.actor }}`nBranch: ${{ inputs.branch }}`nEnvironment: ${{ inputs.environment }}`nDate/Time: $timestamp`n`nDeployment completed successfully."
+
+          $payload = @{ text = $text } | ConvertTo-Json -Depth 1
+
+          Invoke-RestMethod `
+            -Uri "${{ secrets.TEAMS_WEBHOOK_URL }}" `
+            -Method Post `
+            -Body $payload `
+            -ContentType "application/json"
+
+      - name: Failure Notification
+        if: failure()
+        shell: powershell
+        run: |
+          $timestamp = Get-Date -Format "yyyy-MM-dd HH:mm:ss"
+
+          $text = "DATABASE DEPLOYMENT - FAILED`n`nCreator: ${{ github.actor }}`nBranch: ${{ inputs.branch }}`nEnvironment: ${{ inputs.environment }}`nDate/Time: $timestamp`n`nDeployment failed. Please review logs."
+
+          $payload = @{ text = $text } | ConvertTo-Json -Depth 1
+
+          Invoke-RestMethod `
+            -Uri "${{ secrets.TEAMS_WEBHOOK_URL }}" `
+            -Method Post `
+            -Body $payload `
+            -ContentType "application/json"
