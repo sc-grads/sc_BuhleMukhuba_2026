@@ -35,18 +35,9 @@ jobs:
           $envName = "${{ steps.env.outputs.ENV_NAME }}"
           $timestamp = Get-Date -Format "yyyy-MM-dd HH:mm:ss"
 
-          $payload = @{
-            text = @"
-**DATABASE DEPLOYMENT - APPROVAL REQUIRED**
+          $text = "DATABASE DEPLOYMENT - APPROVAL REQUIRED`n`nCreator: ${{ github.actor }}`nBranch: ${{ github.ref_name }}`nEnvironment: $envName`nDate/Time: $timestamp`n`nPlease approve this deployment in GitHub Environments."
 
-**Creator:** ${{ github.actor }}
-**Branch:** ${{ github.ref_name }}
-**Environment:** $envName
-**Date/Time:** $timestamp
-
-Please approve this deployment in GitHub Environments.
-"@
-          } | ConvertTo-Json
+          $payload = @{ text = $text } | ConvertTo-Json -Depth 1
 
           Invoke-RestMethod `
             -Uri "${{ secrets.TEAMS_WEBHOOK_URL }}" `
@@ -72,18 +63,9 @@ Please approve this deployment in GitHub Environments.
           $envName = "${{ steps.env.outputs.ENV_NAME }}"
           $timestamp = Get-Date -Format "yyyy-MM-dd HH:mm:ss"
 
-          $payload = @{
-            text = @"
-**DATABASE DEPLOYMENT - SUCCESS**
+          $text = "DATABASE DEPLOYMENT - SUCCESS`n`nCreator: ${{ github.actor }}`nBranch: ${{ github.ref_name }}`nEnvironment: $envName`nDate/Time: $timestamp`n`nDeployment completed successfully."
 
-**Creator:** ${{ github.actor }}
-**Branch:** ${{ github.ref_name }}
-**Environment:** $envName
-**Date/Time:** $timestamp
-
-Deployment completed successfully.
-"@
-          } | ConvertTo-Json
+          $payload = @{ text = $text } | ConvertTo-Json -Depth 1
 
           Invoke-RestMethod `
             -Uri "${{ secrets.TEAMS_WEBHOOK_URL }}" `
@@ -98,18 +80,9 @@ Deployment completed successfully.
           $envName = "${{ steps.env.outputs.ENV_NAME }}"
           $timestamp = Get-Date -Format "yyyy-MM-dd HH:mm:ss"
 
-          $payload = @{
-            text = @"
-**DATABASE DEPLOYMENT - FAILED**
+          $text = "DATABASE DEPLOYMENT - FAILED`n`nCreator: ${{ github.actor }}`nBranch: ${{ github.ref_name }}`nEnvironment: $envName`nDate/Time: $timestamp`n`nDeployment failed. Please review the workflow logs."
 
-**Creator:** ${{ github.actor }}
-**Branch:** ${{ github.ref_name }}
-**Environment:** $envName
-**Date/Time:** $timestamp
-
-Deployment failed. Please review the workflow logs.
-"@
-          } | ConvertTo-Json
+          $payload = @{ text = $text } | ConvertTo-Json -Depth 1
 
           Invoke-RestMethod `
             -Uri "${{ secrets.TEAMS_WEBHOOK_URL }}" `
