@@ -33,9 +33,19 @@ jobs:
         shell: powershell
         run: |
           $envName = "${{ steps.env.outputs.ENV_NAME }}"
+          $timestamp = Get-Date -Format "yyyy-MM-dd HH:mm:ss"
 
           $payload = @{
-            text = "APPROVAL REQUIRED Branch: ${{ github.ref_name }}`nEnvironment: $envName`nPlease approve in GitHub Environments"
+            text = @"
+**DATABASE DEPLOYMENT - APPROVAL REQUIRED**
+
+**Creator:** ${{ github.actor }}
+**Branch:** ${{ github.ref_name }}
+**Environment:** $envName
+**Date/Time:** $timestamp
+
+Please approve this deployment in GitHub Environments.
+"@
           } | ConvertTo-Json
 
           Invoke-RestMethod `
@@ -60,9 +70,19 @@ jobs:
         shell: powershell
         run: |
           $envName = "${{ steps.env.outputs.ENV_NAME }}"
+          $timestamp = Get-Date -Format "yyyy-MM-dd HH:mm:ss"
 
           $payload = @{
-            text = "SUCCESS Branch: ${{ github.ref_name }}`nEnvironment: $envName"
+            text = @"
+**DATABASE DEPLOYMENT - SUCCESS**
+
+**Creator:** ${{ github.actor }}
+**Branch:** ${{ github.ref_name }}
+**Environment:** $envName
+**Date/Time:** $timestamp
+
+Deployment completed successfully.
+"@
           } | ConvertTo-Json
 
           Invoke-RestMethod `
@@ -76,9 +96,19 @@ jobs:
         shell: powershell
         run: |
           $envName = "${{ steps.env.outputs.ENV_NAME }}"
+          $timestamp = Get-Date -Format "yyyy-MM-dd HH:mm:ss"
 
           $payload = @{
-            text = "FAILED Branch: ${{ github.ref_name }}`nEnvironment: $envName"
+            text = @"
+**DATABASE DEPLOYMENT - FAILED**
+
+**Creator:** ${{ github.actor }}
+**Branch:** ${{ github.ref_name }}
+**Environment:** $envName
+**Date/Time:** $timestamp
+
+Deployment failed. Please review the workflow logs.
+"@
           } | ConvertTo-Json
 
           Invoke-RestMethod `
