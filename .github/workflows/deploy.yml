@@ -2,9 +2,7 @@ name: Database Deployment
 
 on:
   push:
-    branches:
-      - main
-      - staging
+    branches: ["main", "Staging"]
 
   workflow_dispatch:
 
@@ -13,25 +11,31 @@ jobs:
   deploy-database:
     runs-on: windows-latest
 
-    steps:
+    environment:
+      name: ${{ github.ref_name == 'main' && 'production' || 'shriya' }}
 
-      - name: Set Environment
-        shell: powershell
-        run: |
-          if ("${{ github.ref_name }}" -eq "main") {
-            echo "ENV_NAME=production" >> $env:GITHUB_ENV
-          } else {
-            echo "ENV_NAME=Shriya" >> $env:GITHUB_ENV
-          }
+    steps:
 
       - name: Checkout Repository
         uses: actions/checkout@v4
 
-      - name: Notify Start (Teams)
+      - name: Determine Environment
+        id: env
         shell: powershell
         run: |
+          if ("${{ github.ref_name }}" -eq "main") {
+            echo "ENV_NAME=production" >> $env:GITHUB_OUTPUT
+          } else {
+            echo "ENV_NAME=shriya" >> $env:GITHUB_OUTPUT
+          }
+
+      - name: Send Approval Request Notification (Teams)
+        shell: powershell
+        run: |
+          $envName = "${{ steps.env.outputs.ENV_NAME }}"
+
           $payload = @{
-            text = "Deployment starting`nBranch: ${{ github.ref_name }}`nEnvironment: $env:ENV_NAME`nUser: ${{ github.actor }}"
+            text = "APPROVAL REQUIRED Branch: ${{ github.ref_name }}`nEnvironment: $envName`nPlease approve in GitHub Environments"
           } | ConvertTo-Json
 
           Invoke-RestMethod `
@@ -40,35 +44,25 @@ jobs:
             -Body $payload `
             -ContentType "application/json"
 
-      - name: Execute SQL Script (Stable Method)
+      - name: Execute SQL Script
         shell: powershell
         run: |
-          $server = "${{ secrets.TUNNEL_URL }}"
-          $user = "${{ secrets.SQL_USERNAME }}"
-          $pass = "${{ secrets.SQL_PASSWORD }}"
-          $db = "master"
-
-          $sql = Get-Content "Automation Project/Deployment.sql" -Raw
-
-          $connString = "Server=$server;Database=$db;User ID=$user;Password=$pass;TrustServerCertificate=True;"
-
-          $conn = New-Object System.Data.SqlClient.SqlConnection
-          $conn.ConnectionString = $connString
-          $conn.Open()
-
-          $cmd = $conn.CreateCommand()
-          $cmd.CommandTimeout = 120
-          $cmd.CommandText = $sql
-          $cmd.ExecuteNonQuery()
-
-          $conn.Close()
+          sqlcmd `
+            -S "${{ secrets.TUNNEL_URL }}" `
+            -d "master" `
+            -U "${{ secrets.SQL_USERNAME }}" `
+            -P "${{ secrets.SQL_PASSWORD }}" `
+            -C `
+            -i "Automation Project/Deployment.sql"
 
       - name: Notify Success
         if: success()
         shell: powershell
         run: |
+          $envName = "${{ steps.env.outputs.ENV_NAME }}"
+
           $payload = @{
-            text = "SUCCESS`nBranch: ${{ github.ref_name }}`nEnvironment: $env:ENV_NAME"
+            text = "SUCCESS Branch: ${{ github.ref_name }}`nEnvironment: $envName"
           } | ConvertTo-Json
 
           Invoke-RestMethod `
@@ -81,8 +75,10 @@ jobs:
         if: failure()
         shell: powershell
         run: |
+          $envName = "${{ steps.env.outputs.ENV_NAME }}"
+
           $payload = @{
-            text = "FAILED`nBranch: ${{ github.ref_name }}`nEnvironment: $env:ENV_NAME"
+            text = "FAILED Branch: ${{ github.ref_name }}`nEnvironment: $envName"
           } | ConvertTo-Json
 
           Invoke-RestMethod `
