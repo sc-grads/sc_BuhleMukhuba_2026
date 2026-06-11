@@ -32,7 +32,7 @@ jobs:
         run: |
           $timestamp = Get-Date -Format "yyyy-MM-dd HH:mm:ss"
 
-          $text = "DATABASE DEPLOYMENT - APPROVAL REQUIRED`n`nCreator: ${{ github.actor }}`nBranch: ${{ inputs.branch }}`nEnvironment: ${{ inputs.environment }}`nDate/Time: $timestamp`n`nPlease approve this deployment in GitHub Environments."
+          $text = "DATABASE DEPLOYMENT - APPROVAL REQUIRED`n`nCreator: ${{ github.actor }}`n`nBranch: ${{ inputs.branch }}`n`nEnvironment: ${{ inputs.environment }}`n`nDate/Time: $timestamp`n`nPlease approve this deployment in GitHub Environments."
 
           $payload = @{ text = $text } | ConvertTo-Json -Depth 1
 
@@ -59,7 +59,7 @@ jobs:
         run: |
           $timestamp = Get-Date -Format "yyyy-MM-dd HH:mm:ss"
 
-          $text = "DATABASE DEPLOYMENT - SUCCESS`n`nCreator: ${{ github.actor }}`nBranch: ${{ inputs.branch }}`nEnvironment: ${{ inputs.environment }}`nDate/Time: $timestamp`n`nDeployment completed successfully."
+          $text = "DATABASE DEPLOYMENT - SUCCESS`n`nCreator: ${{ github.actor }}`n`nBranch: ${{ inputs.branch }}`n`nEnvironment: ${{ inputs.environment }}`n`nDate/Time: $timestamp`n`nDeployment completed successfully."
 
           $payload = @{ text = $text } | ConvertTo-Json -Depth 1
 
@@ -75,7 +75,7 @@ jobs:
         run: |
           $timestamp = Get-Date -Format "yyyy-MM-dd HH:mm:ss"
 
-          $text = "DATABASE DEPLOYMENT - FAILED`n`nCreator: ${{ github.actor }}`nBranch: ${{ inputs.branch }}`nEnvironment: ${{ inputs.environment }}`nDate/Time: $timestamp`n`nDeployment failed. Please review logs."
+          $text = "DATABASE DEPLOYMENT - FAILED`n`nCreator: ${{ github.actor }}`n`nBranch: ${{ inputs.branch }}`n`nEnvironment: ${{ inputs.environment }}`n`nDate/Time: $timestamp`n`nDeployment failed. Please review logs."
 
           $payload = @{ text = $text } | ConvertTo-Json -Depth 1
 
