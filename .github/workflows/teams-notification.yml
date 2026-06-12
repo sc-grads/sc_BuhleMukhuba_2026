@@ -42,7 +42,7 @@ jobs:
               fi
             fi
 
-            DETAILS="Repo: ${{ github.repository }} \n Title: ${{ github.event.pull_request.title }} \nAuthor: ${{ github.actor }}"
+            DETAILS="Repo: ${{ github.repository }} | Title: ${{ github.event.pull_request.title }} | Author: ${{ github.actor }}"
 
           elif [ "$EVENT" = "pull_request_review" ]; then
 
@@ -54,12 +54,12 @@ jobs:
             fi
 
             TEXT="Pull Request Approved"
-            DETAILS="Repo: ${{ github.repository }} \nTitle: ${{ github.event.pull_request.title }} \nApproved By: ${{ github.actor }}"
+            DETAILS="Repo: ${{ github.repository }} | Title: ${{ github.event.pull_request.title }} | Approved By: ${{ github.actor }}"
 
           elif [ "$EVENT" = "push" ]; then
 
             TEXT="Push to ${{ github.ref_name }}"
-            DETAILS="Repo: ${{ github.repository }} \nCommit: ${{ github.sha }} \nAuthor: ${{ github.actor }}"
+            DETAILS="Repo: ${{ github.repository }} | Commit: ${{ github.sha }}"
 
           elif [ "$EVENT" = "create" ]; then
 
@@ -72,7 +72,7 @@ jobs:
             fi
 
             TEXT="New Branch Created: $REF"
-            DETAILS="Repo: ${{ github.repository }} \nCreated By: ${{ github.actor }}"
+            DETAILS="Repo: ${{ github.repository }} | Created By: ${{ github.actor }}"
 
           fi
 
