@@ -1,17 +1,11 @@
-name: Reusable Database Deployment Template
+name: Database Deployment Template
 
 on:
   workflow_call:
     inputs:
-      environment:
+      environment_name:
         required: true
         type: string
-      branch:
-        required: true
-        type: string
-      require_approval:
-        required: true
-        type: boolean
 
 jobs:
 
@@ -19,20 +13,19 @@ jobs:
     runs-on: windows-latest
 
     environment:
-      name: ${{ inputs.environment }}
+      name: ${{ inputs.environment_name }}
 
     steps:
 
       - name: Checkout Repository
         uses: actions/checkout@v4
 
-      - name: Approval Notification (Only for Staging)
-        if: ${{ inputs.require_approval == true }}
+      - name: Notify Deployment Started
         shell: powershell
         run: |
           $timestamp = Get-Date -Format "yyyy-MM-dd"
 
-          $text = "DATABASE DEPLOYMENT - APPROVAL REQUIRED`n`nCreator: ${{ github.actor }}`n`nBranch: ${{ inputs.branch }}`n`nEnvironment: ${{ inputs.environment }}`n`nDate: $timestamp`n`nPlease approve this deployment in GitHub Environments."
+          $text = "DATABASE DEPLOYMENT - STARTED`n`nCreator: ${{ github.actor }}`n`nEnvironment: ${{ inputs.environment_name }}`n`nDate: $timestamp`n`nDeployment has started."
 
           $payload = @{ text = $text } | ConvertTo-Json -Depth 1
 
@@ -46,20 +39,21 @@ jobs:
         shell: powershell
         run: |
           sqlcmd `
-            -S "${{ secrets.TUNNEL_URL }}" `
+            -S "${{ secrets.SQL_SERVER }}" `
             -d "master" `
             -U "${{ secrets.SQL_USERNAME }}" `
             -P "${{ secrets.SQL_PASSWORD }}" `
             -C `
+            -b `
             -i "Automation Project/Deployment.sql"
 
-      - name: Success Notification
+      - name: Notify Success
         if: success()
         shell: powershell
         run: |
           $timestamp = Get-Date -Format "yyyy-MM-dd"
 
-          $text = "DATABASE DEPLOYMENT - SUCCESS`n`nCreator: ${{ github.actor }}`n`nBranch: ${{ inputs.branch }}`n`nEnvironment: ${{ inputs.environment }}`n`nDate: $timestamp`n`nDeployment completed successfully."
+          $text = "DATABASE DEPLOYMENT - SUCCESS`n`nCreator: ${{ github.actor }}`n`nEnvironment: ${{ inputs.environment_name }}`n`nDate: $timestamp`n`nDeployment completed successfully."
 
           $payload = @{ text = $text } | ConvertTo-Json -Depth 1
 
@@ -69,13 +63,13 @@ jobs:
             -Body $payload `
             -ContentType "application/json"
 
-      - name: Failure Notification
+      - name: Notify Failure
         if: failure()
         shell: powershell
         run: |
           $timestamp = Get-Date -Format "yyyy-MM-dd"
 
-          $text = "DATABASE DEPLOYMENT - FAILED`n`nCreator: ${{ github.actor }}`n`nBranch: ${{ inputs.branch }}`n`nEnvironment: ${{ inputs.environment }}`n`nDate: $timestamp`n`nDeployment failed. Please review logs."
+          $text = "DATABASE DEPLOYMENT - FAILED`n`nCreator: ${{ github.actor }}`n`nEnvironment: ${{ inputs.environment_name }}`n`nDate/Time: $timestamp`n`nDeployment failed. Please review logs."
 
           $payload = @{ text = $text } | ConvertTo-Json -Depth 1
 
