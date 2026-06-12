@@ -1,27 +1,40 @@
 name: Database Deployment
 
 on:
-  push:
-    branches: ["main", "Staging"]
-
   workflow_dispatch:
 
 jobs:
 
-  deploy-staging:
-    if: github.ref_name == 'Staging'
+  deploy-buhle:
     uses: ./.github/workflows/deploy_template.yml
     with:
-      environment: Shriya
-      branch: Staging
-      require_approval: true
+      environment_name: production
     secrets: inherit
 
-  deploy-production:
-    if: github.ref_name == 'main'
+  notify-shriya-approval:
+    needs: deploy-buhle
+    runs-on: windows-latest
+
+    steps:
+      - name: Send Approval Request Notification
+        shell: powershell
+        run: |
+          $timestamp = Get-Date -Format "yyyy-MM-dd"
+
+          $text = "DATABASE DEPLOYMENT - APPROVAL REQUIRED`n`nCreator: ${{ github.actor }}`n`nEnvironment: Shriya`n`nDate: $timestamp`n`nPlease approve this deployment in GitHub Environments."
+
+          $payload = @{ text = $text } | ConvertTo-Json -Depth 1
+
+          Invoke-RestMethod `
+            -Uri "${{ secrets.TEAMS_WEBHOOK_URL }}" `
+            -Method Post `
+            -Body $payload `
+            -ContentType "application/json"
+
+  deploy-shriya:
+    needs: notify-shriya-approval
+
     uses: ./.github/workflows/deploy_template.yml
     with:
-      environment: production
-      branch: main
-      require_approval: false
+      environment_name: Shriya
     secrets: inherit
