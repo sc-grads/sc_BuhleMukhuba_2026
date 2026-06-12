@@ -69,7 +69,7 @@ jobs:
         run: |
           $timestamp = Get-Date -Format "yyyy-MM-dd"
 
-          $text = "DATABASE DEPLOYMENT - FAILED`n`nCreator: ${{ github.actor }}`n`nEnvironment: ${{ inputs.environment_name }}`n`nDate/Time: $timestamp`n`nDeployment failed. Please review logs."
+          $text = "DATABASE DEPLOYMENT - FAILED`n`nCreator: ${{ github.actor }}`n`nEnvironment: ${{ inputs.environment_name }}`n`nDate: $timestamp`n`nDeployment failed. Please review logs."
 
           $payload = @{ text = $text } | ConvertTo-Json -Depth 1
 
