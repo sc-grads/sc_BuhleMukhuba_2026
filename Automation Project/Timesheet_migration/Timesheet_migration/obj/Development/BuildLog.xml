@@ -8,7 +8,11 @@
   <LastBuildInfos>
     <ProjectBuildItemInfo>
       <Name>Migration.dtsx</Name>
+<<<<<<< HEAD
+      <LastWriteTime>2026-06-26T07:21:41.8744667Z</LastWriteTime>
+=======
       <LastWriteTime>2026-06-24T12:41:24.185344Z</LastWriteTime>
+>>>>>>> main
       <LastKnownProtectionLevel>EncryptSensitiveWithUserKey</LastKnownProtectionLevel>
     </ProjectBuildItemInfo>
   </LastBuildInfos>
