@@ -11,8 +11,13 @@
   DTS:LocaleID="7177"
   DTS:ObjectName="Package1"
   DTS:PackageType="5"
+<<<<<<< HEAD
   DTS:VersionBuild="479"
   DTS:VersionGUID="{5CA72BD8-BC9B-4887-880F-8C8E670BE886}">
+=======
+  DTS:VersionBuild="411"
+  DTS:VersionGUID="{86BE8839-FAAB-4001-9B5E-C9310AA9CD39}">
+>>>>>>> main
   <DTS:Property
     DTS:Name="PackageFormatVersion">8</DTS:Property>
   <DTS:ConnectionManagers>
@@ -902,6 +907,7 @@
     </DTS:Variable>
     <DTS:Variable
       DTS:CreationName=""
+<<<<<<< HEAD
       DTS:DTSID="{DA84B5B8-805D-447E-B33D-B29D53FDC147}"
       DTS:IncludeInDebugDump="6789"
       DTS:Namespace="User"
@@ -911,6 +917,8 @@
     </DTS:Variable>
     <DTS:Variable
       DTS:CreationName=""
+=======
+>>>>>>> main
       DTS:DTSID="{59CC1418-4CA9-4459-B574-9C1A226B1520}"
       DTS:IncludeInDebugDump="2345"
       DTS:Namespace="User"
@@ -978,6 +986,7 @@
     </DTS:Variable>
     <DTS:Variable
       DTS:CreationName=""
+<<<<<<< HEAD
       DTS:DTSID="{1AC550DD-D3AA-403B-8677-E3A2AFA9A80C}"
       DTS:IncludeInDebugDump="6789"
       DTS:Namespace="User"
@@ -987,6 +996,8 @@
     </DTS:Variable>
     <DTS:Variable
       DTS:CreationName=""
+=======
+>>>>>>> main
       DTS:DTSID="{A017232A-B9E8-4A53-A778-022FD10EE4FF}"
       DTS:EvaluateAsExpression="True"
       DTS:Expression="SUBSTRING(&#xA;@[User::FileName],&#xA;FINDSTRING(@[User::FileName], &quot;_&quot;, 2) + 1,&#xA;FINDSTRING(@[User::FileName], &quot;_&quot;, 3)&#xA;- FINDSTRING(@[User::FileName], &quot;_&quot;, 2) - 1&#xA;)"
@@ -999,6 +1010,7 @@
     </DTS:Variable>
     <DTS:Variable
       DTS:CreationName=""
+<<<<<<< HEAD
       DTS:DTSID="{C2610D16-F765-4238-AE83-ED26DBB34D46}"
       DTS:IncludeInDebugDump="2345"
       DTS:Namespace="User"
@@ -1011,10 +1023,14 @@
       DTS:DTSID="{C511D1C6-A1E8-4AA0-8450-740558B54DB4}"
       DTS:EvaluateAsExpression="True"
       DTS:Expression="@[System::PackageName]"
+=======
+      DTS:DTSID="{C511D1C6-A1E8-4AA0-8450-740558B54DB4}"
+>>>>>>> main
       DTS:IncludeInDebugDump="2345"
       DTS:Namespace="User"
       DTS:ObjectName="PackageName">
       <DTS:VariableValue
+<<<<<<< HEAD
         DTS:DataType="8">Package1</DTS:VariableValue>
     </DTS:Variable>
     <DTS:Variable
@@ -1043,6 +1059,10 @@
       DTS:ObjectName="Rows">
       <DTS:VariableValue
         DTS:DataType="3">0</DTS:VariableValue>
+=======
+        DTS:DataType="8"
+        xml:space="preserve"></DTS:VariableValue>
+>>>>>>> main
     </DTS:Variable>
     <DTS:Variable
       DTS:CreationName=""
@@ -1076,6 +1096,7 @@
       <DTS:VariableValue
         DTS:DataType="8">Successfully loaded file to Staging</DTS:VariableValue>
     </DTS:Variable>
+<<<<<<< HEAD
     <DTS:Variable
       DTS:CreationName=""
       DTS:DTSID="{6B3E2EAD-436C-4CA5-BAF3-41B018AD37FF}"
@@ -1085,6 +1106,8 @@
       <DTS:VariableValue
         DTS:DataType="3">0</DTS:VariableValue>
     </DTS:Variable>
+=======
+>>>>>>> main
   </DTS:Variables>
   <DTS:Executables>
     <DTS:Executable
@@ -1111,7 +1134,11 @@
           <DTS:ObjectData>
             <SQLTask:SqlTaskData
               SQLTask:Connection="{53A541EC-5629-45CA-8663-405B698C8848}"
+<<<<<<< HEAD
               SQLTask:SqlStatementSource="IF DB_ID('TimesheetDB') IS NULL&#xA;BEGIN&#xA;    CREATE DATABASE TimesheetDB;&#xA;END;&#xA;GO&#xA;&#xA;USE TimesheetDB;&#xA;GO" xmlns:SQLTask="www.microsoft.com/sqlserver/dts/tasks/sqltask" />
+=======
+              SQLTask:SqlStatementSource="IF DB_ID('TimesheetDB') IS NOT NULL&#xA;BEGIN&#xA;      ALTER DATABASE TimesheetDB SET SINGLE_USER WITH ROLLBACK IMMEDIATE;&#xA;      DROP DATABASE TimesheetDB;&#xA;END;&#xA;&#xA;CREATE DATABASE TimesheetDB;" xmlns:SQLTask="www.microsoft.com/sqlserver/dts/tasks/sqltask" />
+>>>>>>> main
           </DTS:ObjectData>
         </DTS:Executable>
         <DTS:Executable
@@ -1128,7 +1155,11 @@
           <DTS:ObjectData>
             <SQLTask:SqlTaskData
               SQLTask:Connection="{53A541EC-5629-45CA-8663-405B698C8848}"
+<<<<<<< HEAD
               SQLTask:SqlStatementSource="USE TimesheetDB;&#xA;GO&#xA;&#xA;/* =========================&#xA;   DROP PROD + STAGING TABLES&#xA;========================= */&#xA;&#xA;IF OBJECT_ID('dbo.EmployeeLeave', 'U') IS NOT NULL&#xA;    DROP TABLE dbo.EmployeeLeave;&#xA;&#xA;IF OBJECT_ID('dbo.Timesheet', 'U') IS NOT NULL&#xA;    DROP TABLE dbo.Timesheet;&#xA;&#xA;IF OBJECT_ID('dbo.Employee', 'U') IS NOT NULL&#xA;    DROP TABLE dbo.Employee;&#xA;&#xA;IF OBJECT_ID('dbo.Stg_Timesheet', 'U') IS NOT NULL&#xA;    DROP TABLE dbo.Stg_Timesheet;&#xA;&#xA;&#xA;/* =========================&#xA;   LOOKUP TABLES (ENSURE EXIST)&#xA;========================= */&#xA;&#xA;IF OBJECT_ID('dbo.Activity', 'U') IS NULL&#xA;BEGIN&#xA;    CREATE TABLE Activity (&#xA;        ActivityID INT IDENTITY(1,1) PRIMARY KEY,&#xA;        ActivityName VARCHAR(100) NOT NULL UNIQUE&#xA;    );&#xA;END;&#xA;&#xA;IF OBJECT_ID('dbo.Client', 'U') IS NULL&#xA;BEGIN&#xA;    CREATE TABLE Client (&#xA;        ClientID INT IDENTITY(1,1) PRIMARY KEY,&#xA;        ClientName VARCHAR(150) NOT NULL UNIQUE,&#xA;        ClientProject VARCHAR(150),&#xA;        CreatedDate DATETIME NOT NULL DEFAULT GETDATE()&#xA;    );&#xA;END;&#xA;&#xA;IF OBJECT_ID('dbo.LeaveType', 'U') IS NULL&#xA;BEGIN&#xA;    CREATE TABLE LeaveType (&#xA;        LeaveTypeID INT IDENTITY(1,1) PRIMARY KEY,&#xA;        LeaveType VARCHAR(100) NOT NULL UNIQUE&#xA;    );&#xA;END;&#xA;&#xA;&#xA;/* =========================&#xA;   RECREATE STAGING TABLE&#xA;========================= */&#xA;&#xA;CREATE TABLE Stg_Timesheet (&#xA;    FirstName VARCHAR(50),&#xA;    LastName VARCHAR(50),&#xA;    ActivityName VARCHAR(100),&#xA;    ClientName VARCHAR(150),&#xA;    ClientProject VARCHAR(150),&#xA;    WorkDay VARCHAR(50),&#xA;    WorkDate DATE,&#xA;    Comments VARCHAR(MAX),&#xA;    HoursWorked TIME,&#xA;    StartTime TIME,&#xA;    EndTime TIME,&#xA;    Billing VARCHAR(50),&#xA;    SourceFileName VARCHAR(255)&#xA;);&#xA;&#xA;&#xA;/* =========================&#xA;   RECREATE EMPLOYEE&#xA;========================= */&#xA;&#xA;CREATE TABLE Employee (&#xA;    EmployeeID INT IDENTITY(1,1) PRIMARY KEY,&#xA;    FirstName VARCHAR(100) NOT NULL,&#xA;    LastName VARCHAR(100) NOT NULL,&#xA;    CreatedDate DATETIME NOT NULL DEFAULT GETDATE(),&#xA;    CONSTRAINT UQ_Employee UNIQUE (FirstName, LastName)&#xA;);&#xA;&#xA;&#xA;/* =========================&#xA;   RECREATE TIMESHEET&#xA;========================= */&#xA;&#xA;CREATE TABLE Timesheet (&#xA;    TimesheetID INT IDENTITY(1,1) PRIMARY KEY,&#xA;    TimesheetCode VARCHAR(20),&#xA;    EmployeeID INT NOT NULL,&#xA;    ActivityID INT NOT NULL,&#xA;    ClientID INT NOT NULL,&#xA;    WorkDate DATE NOT NULL,&#xA;    Comments VARCHAR(MAX),&#xA;    HoursWorked NVARCHAR(5) NOT NULL,&#xA;    StartTime NVARCHAR(5) NOT NULL,&#xA;    EndTime NVARCHAR(5),&#xA;    Billing VARCHAR(50),&#xA;    SourceFileName VARCHAR(255) NOT NULL,&#xA;    CreatedDate DATETIME NOT NULL DEFAULT GETDATE(),&#xA;&#xA;    CONSTRAINT FK_Timesheet_Employee&#xA;        FOREIGN KEY (EmployeeID) REFERENCES Employee(EmployeeID),&#xA;&#xA;    CONSTRAINT FK_Timesheet_Activity&#xA;        FOREIGN KEY (ActivityID) REFERENCES Activity(ActivityID),&#xA;&#xA;    CONSTRAINT FK_Timesheet_Client&#xA;        FOREIGN KEY (ClientID) REFERENCES Client(ClientID)&#xA;);&#xA;&#xA;&#xA;/* =========================&#xA;   RECREATE EMPLOYEE LEAVE&#xA;========================= */&#xA;&#xA;CREATE TABLE EmployeeLeave (&#xA;    LeaveID INT IDENTITY(1,1) PRIMARY KEY,&#xA;    EmployeeID INT NOT NULL,&#xA;    LeaveTypeID INT NOT NULL,&#xA;    LeaveDate DATE NOT NULL,&#xA;    HoursTaken NVARCHAR(5) NOT NULL,&#xA;    SourceFileName VARCHAR(255),&#xA;    CreatedDate DATETIME NOT NULL DEFAULT GETDATE(),&#xA;&#xA;    CONSTRAINT FK_EmployeeLeave_Employee&#xA;        FOREIGN KEY (EmployeeID) REFERENCES Employee(EmployeeID),&#xA;&#xA;    CONSTRAINT FK_EmployeeLeave_LeaveType&#xA;        FOREIGN KEY (LeaveTypeID) REFERENCES LeaveType(LeaveTypeID),&#xA;&#xA;    CONSTRAINT UQ_Leave UNIQUE (EmployeeID, LeaveDate)&#xA;);" xmlns:SQLTask="www.microsoft.com/sqlserver/dts/tasks/sqltask" />
+=======
+              SQLTask:SqlStatementSource="USE TimesheetDB;&#xA;&#xA;CREATE TABLE Employee (&#xA;    EmployeeID INT IDENTITY(1,1) PRIMARY KEY,&#xA;    FirstName VARCHAR(100) NOT NULL,&#xA;    LastName VARCHAR(100) NOT NULL,&#xA;    CreatedDate DATE NOT NULL DEFAULT GETDATE()&#xA;);&#xA;&#xA;ALTER TABLE Employee&#xA;ADD CONSTRAINT UQ_Employee_Name UNIQUE (FirstName, LastName);&#xA;&#xA;CREATE INDEX IX_Employee_Name&#xA;ON Employee(FirstName, LastName);&#xA;&#xA;-- ACTIVITY TABLE&#xA;CREATE TABLE Activity (&#xA;    ActivityID INT IDENTITY(1,1) PRIMARY KEY,&#xA;    ActivityName VARCHAR(100) NOT NULL&#xA;);&#xA;&#xA;ALTER TABLE Activity&#xA;ADD CONSTRAINT UQ_ActivityName UNIQUE (ActivityName);&#xA;&#xA;CREATE INDEX IX_ActivityName&#xA;ON Activity(ActivityName);&#xA;&#xA;-- CLIENT TABLE&#xA;CREATE TABLE Client (&#xA;    ClientID INT IDENTITY(1,1) PRIMARY KEY,&#xA;    ClientName VARCHAR(150) NOT NULL,&#xA;    ClientProject VARCHAR(150),&#xA;    CreatedDate DATE NOT NULL DEFAULT GETDATE()&#xA;);&#xA;&#xA;ALTER TABLE Client&#xA;ADD CONSTRAINT UQ_ClientName UNIQUE (ClientName);&#xA;&#xA;CREATE INDEX IX_ClientName&#xA;ON Client(ClientName);&#xA;&#xA;-- TIMESHEET TABLE&#xA;CREATE TABLE Timesheet (&#xA;    TimesheetID INT IDENTITY(1,1) PRIMARY KEY,&#xA;    TimesheetCode VARCHAR(20) NOT NULL,&#xA;    EmployeeID INT NOT NULL,&#xA;    ActivityID INT NOT NULL,&#xA;    ClientID INT NOT NULL,&#xA;    ClientProject VARCHAR(150),&#xA;    WorkDate DATE NOT NULL,&#xA;    HoursWorked TIME NOT NULL,&#xA;    StartTime TIME NOT NULL,&#xA;    EndTime Time NOT NULL,&#xA;    Billing VARCHAR(50) NOT NULL,&#xA;    SourceFileName VARCHAR(255) NOT NULL,&#xA;    CreatedDate DATETIME NOT NULL DEFAULT GETDATE(),&#xA;&#xA;    CONSTRAINT FK_Timesheet_Employee&#xA;        FOREIGN KEY (EmployeeID) REFERENCES Employee(EmployeeID),&#xA;&#xA;    CONSTRAINT FK_Timesheet_Activity&#xA;        FOREIGN KEY (ActivityID) REFERENCES Activity(ActivityID),&#xA;&#xA;    CONSTRAINT FK_Timesheet_Client&#xA;        FOREIGN KEY (ClientID) REFERENCES Client(ClientID)&#xA;);&#xA;&#xA;CREATE INDEX IX_Timesheet_EmployeeID ON Timesheet(EmployeeID);&#xA;CREATE INDEX IX_Timesheet_ActivityID ON Timesheet(ActivityID);&#xA;CREATE INDEX IX_Timesheet_ClientID ON Timesheet(ClientID);&#xA;CREATE INDEX IX_Timesheet_WorkDate ON Timesheet(WorkDate);&#xA;&#xA;--Leave &#xA;&#xA;CREATE TABLE LeaveType (&#xA;    LeaveTypeID INT IDENTITY(1,1) PRIMARY KEY,&#xA;    LeaveType VARCHAR(100) NOT NULL UNIQUE&#xA;);&#xA;&#xA;CREATE TABLE EmployeeLeave (&#xA;LeaveID INT IDENTITY(1,1) PRIMARY KEY,&#xA;EmployeeID INT NOT NULL,&#xA;LeaveTypeID INT NOT NULL,&#xA;LeaveDate DATE NOT NULL,&#xA;HoursTaken TIME NOT NULL,&#xA;SourceFileName VARCHAR(255) NULL,&#xA;CreatedDate DATETIME NOT NULL DEFAULT GETDATE(),&#xA;&#xA;CONSTRAINT FK_EmployeeLeave_Employee&#xA;    FOREIGN KEY (EmployeeID)&#xA;    REFERENCES Employee(EmployeeID),&#xA;&#xA;CONSTRAINT FK_EmployeeLeave_LeaveType&#xA;    FOREIGN KEY (LeaveTypeID)&#xA;    REFERENCES LeaveType(LeaveTypeID)&#xA;&#xA;);&#xA;&#xA;ALTER TABLE EmployeeLeave&#xA;ADD CONSTRAINT UQ_Leave UNIQUE (EmployeeID, LeaveDate);&#xA;&#xA;CREATE UNIQUE INDEX IX_LeaveType&#xA;ON LeaveType(LeaveType);&#xA;&#xA;CREATE INDEX IX_EmployeeLeave_EmployeeID&#xA;ON EmployeeLeave(EmployeeID);&#xA;&#xA;CREATE INDEX IX_EmployeeLeave_LeaveTypeID&#xA;ON EmployeeLeave(LeaveTypeID);&#xA;&#xA;CREATE INDEX IX_EmployeeLeave_LeaveDate&#xA;ON EmployeeLeave(LeaveDate);&#xA;&#xA;CREATE INDEX IX_EmployeeLeave_EmployeeDate&#xA;ON EmployeeLeave(EmployeeID, LeaveDate);&#xA;&#xA;CREATE INDEX IX_EmployeeLeave_EmployeeLeaveType&#xA;ON EmployeeLeave(EmployeeID, LeaveTypeID);&#xA;&#xA;CREATE INDEX IX_EmployeeLeave_SourceFile&#xA;ON EmployeeLeave(SourceFileName);&#xA;&#xA;-- STAGING TABLE&#xA;CREATE TABLE Stg_Timesheet (&#xA;    FirstName VARCHAR(50),&#xA;    LastName VARCHAR(50),&#xA;    ActivityName VARCHAR(100),&#xA;    ClientName VARCHAR(150),&#xA;    ClientProject VARCHAR(150),&#xA;    WorkDay VARCHAR(50),&#xA;    WorkDate DATE,&#xA;    HoursWorked TIME,&#xA;    StartTime TIME,&#xA;    EndTime Time,&#xA;    Billing VARCHAR(50),&#xA;    SourceFileName VARCHAR(255)&#xA;);&#xA;&#xA;-- AUDIT TABLE&#xA;CREATE TABLE AuditLog (&#xA;    AuditID INT IDENTITY(1,1) PRIMARY KEY,&#xA;    PackageName VARCHAR(255) NOT NULL,&#xA;    FileName VARCHAR(255),&#xA;    Status VARCHAR(50) NOT NULL,&#xA;    StartTime DATETIME NOT NULL DEFAULT GETDATE(),&#xA;    EndTime DATETIME  NOT NULL DEFAULT GETDATE(),&#xA;    ErrorMessage VARCHAR(MAX)&#xA;);&#xA;&#xA;CREATE INDEX IX_Audit_Status ON AuditLog(Status);&#xA;CREATE INDEX IX_Audit_File ON AuditLog(FileName);&#xA;&#xA;-- SEED DATA (unchanged)&#xA;INSERT INTO Activity (ActivityName)&#xA;VALUES&#xA;('.NET code'), ('Admin'), ('Analysis'), ('Architecture'), ('Training'),&#xA;('Configuration'), ('Cubes'), ('Database'), ('Demo'), ('Deployment'),&#xA;('Design'), ('Documentation'), ('Events'), ('ETL'), ('FrontEnd'),&#xA;('Installing'), ('Meeting'), ('Learning'), ('Lunch'), ('Other'), ('Presenting'),&#xA;('Project Management'), ('Research'), ('Sales call'), ('SharePoint'),&#xA;('Testing'), ('Travel'), ('Troubleshooting'), ('Waiting on client'),&#xA;('Website content'), ('Website and collateral'), ('Annual Leave'),&#xA;('Sick leave'), ('Study Leave'), ('Family Responsibility Leave'),&#xA;('Birthday leave'), ('Public Holiday'), ('Sick Leave - half day'),&#xA;('Annual Leave - half day');&#xA;&#xA;INSERT INTO Client (ClientName)&#xA;VALUES&#xA;('Internal Sambe'), ('ADVTech'), ('AFA Sasfin'), ('Artist Proof Studio'),&#xA;('Assimil8'), ('Base 3'), ('Blue Legacy'), ('C. Steinweg'),&#xA;('Conekt – Aurum'), ('Conekt – Clientele'), ('Conekt – Internal Meeting'),&#xA;('Conekt – Meridian'), ('Conekt – Winning Business'),&#xA;('Conekt AGSA SharePoint'), ('Dentons'), ('Discovery'),&#xA;('Discovery Bank'), ('Discovery CRES'), ('Discovery CSI'),&#xA;('Discovery Health'), ('Discovery Information Governance and Security'),&#xA;('Discovery Innovation Lab'), ('Discovery People'), ('Discovery Skills'),&#xA;('Discovery Vitality'), ('Gyro'), ('KFC Digistics'), ('Life Healthcare'),&#xA;('Medi-Charge'), ('MICA Build'), ('Michelin'), ('Mistro Foods'),&#xA;('OK Furnitures'), ('Olympic Paints'), ('RMB'),&#xA;('RMB CM Data Warehouse support'), ('RMB CORE NRTI'), ('RMB Tumelo'),&#xA;('Sachar Mobile'), ('Sanlam'), ('SBV'), ('Sibanya'), ('Transport Holdings');&#xA;&#xA;INSERT INTO LeaveType (LeaveType)&#xA;VALUES&#xA; ('Annual Leave'),('Sick leave'), ('Study Leave'), ('Family Responsibility Leave'),&#xA;('Birthday leave'), ('Public Holiday'), ('Sick Leave - half day'),&#xA;('Annual Leave - half day');&#xA;" xmlns:SQLTask="www.microsoft.com/sqlserver/dts/tasks/sqltask" />
+>>>>>>> main
           </DTS:ObjectData>
         </DTS:Executable>
       </DTS:Executables>
@@ -1185,20 +1216,31 @@
           <DTS:ObjectData>
             <SQLTask:SqlTaskData
               SQLTask:Connection="{1541D4DB-23C4-4DC3-9CEB-40F1C7A44285}"
+<<<<<<< HEAD
               SQLTask:SqlStatementSource="UPDATE AuditLog&#xA;SET&#xA;    OperationType = ?,&#xA;    RowsModified = ?,&#xA;    Status = ?,&#xA;    EndTime = GETDATE(),&#xA;    ErrorMessage = ?&#xA;WHERE AuditID = ?;" xmlns:SQLTask="www.microsoft.com/sqlserver/dts/tasks/sqltask">
               <SQLTask:ParameterBinding
                 SQLTask:ParameterName="3"
+=======
+              SQLTask:SqlStatementSource="UPDATE AuditLog&#xA;SET&#xA;    Status = ?,&#xA;    EndTime = GETDATE(),&#xA;    ErrorMessage = ?&#xA;WHERE AuditID = ?;" xmlns:SQLTask="www.microsoft.com/sqlserver/dts/tasks/sqltask">
+              <SQLTask:ParameterBinding
+                SQLTask:ParameterName="1"
+>>>>>>> main
                 SQLTask:DtsVariableName="User::ErrorMessage"
                 SQLTask:ParameterDirection="Input"
                 SQLTask:DataType="129"
                 SQLTask:ParameterSize="-1" />
               <SQLTask:ParameterBinding
+<<<<<<< HEAD
                 SQLTask:ParameterName="4"
+=======
+                SQLTask:ParameterName="2"
+>>>>>>> main
                 SQLTask:DtsVariableName="User::AuditID"
                 SQLTask:ParameterDirection="Input"
                 SQLTask:DataType="3"
                 SQLTask:ParameterSize="-1" />
               <SQLTask:ParameterBinding
+<<<<<<< HEAD
                 SQLTask:ParameterName="2"
                 SQLTask:DtsVariableName="User::Status"
                 SQLTask:ParameterDirection="Input"
@@ -1213,6 +1255,10 @@
               <SQLTask:ParameterBinding
                 SQLTask:ParameterName="0"
                 SQLTask:DtsVariableName="User::Operattion"
+=======
+                SQLTask:ParameterName="0"
+                SQLTask:DtsVariableName="User::Status"
+>>>>>>> main
                 SQLTask:ParameterDirection="Input"
                 SQLTask:DataType="130"
                 SQLTask:ParameterSize="-1" />
@@ -1234,6 +1280,7 @@
           <DTS:ObjectData>
             <SQLTask:SqlTaskData
               SQLTask:Connection="{1541D4DB-23C4-4DC3-9CEB-40F1C7A44285}"
+<<<<<<< HEAD
               SQLTask:SqlStatementSource="INSERT INTO AuditLog&#xA;(&#xA;    PackageName,&#xA;    FileName,&#xA;    Status,&#xA;    StartTime,&#xA;    ErrorMessage&#xA;)&#xA;VALUES&#xA;(&#xA;    ?,&#xA;    ?,&#xA;    'Running',&#xA;    GETDATE(),&#xA;    'None'&#xA;);&#xA;SELECT CAST(SCOPE_IDENTITY() AS INT) AS AuditID;"
               SQLTask:ResultType="ResultSetType_SingleRow" xmlns:SQLTask="www.microsoft.com/sqlserver/dts/tasks/sqltask">
               <SQLTask:ResultBinding
@@ -1242,6 +1289,16 @@
               <SQLTask:ParameterBinding
                 SQLTask:ParameterName="0"
                 SQLTask:DtsVariableName="User::PackageName"
+=======
+              SQLTask:SqlStatementSource="INSERT INTO AuditLog&#xA;(&#xA;    PackageName,&#xA;    FileName,&#xA;    Status,&#xA;    StartTime&#xA;)&#xA;OUTPUT INSERTED.AuditID&#xA;VALUES&#xA;(&#xA;    ?,&#xA;    ?,&#xA;    'Running',&#xA;    GETDATE()&#xA;);"
+              SQLTask:ResultType="ResultSetType_SingleRow" xmlns:SQLTask="www.microsoft.com/sqlserver/dts/tasks/sqltask">
+              <SQLTask:ResultBinding
+                SQLTask:ResultName="AuditID"
+                SQLTask:DtsVariableName="User::AuditID" />
+              <SQLTask:ParameterBinding
+                SQLTask:ParameterName="0"
+                SQLTask:DtsVariableName="System::PackageName"
+>>>>>>> main
                 SQLTask:ParameterDirection="Input"
                 SQLTask:DataType="129"
                 SQLTask:ParameterSize="-1" />
@@ -1552,12 +1609,15 @@
                           cachedLength="255"
                           cachedName="Derived Column 3"
                           lineageId="Package\Foreach Loop Container\Staging load\Derived Column.Outputs[Derived Column Output].Columns[Derived Column 3]" />
+<<<<<<< HEAD
                         <inputColumn
                           refId="Package\Foreach Loop Container\Staging load\Data Conversion.Inputs[Data Conversion Input].Columns[F7]"
                           cachedDataType="wstr"
                           cachedLength="255"
                           cachedName="F7"
                           lineageId="Package\Foreach Loop Container\Staging load\Excel Source.Outputs[Excel Source Output].Columns[F7]" />
+=======
+>>>>>>> main
                       </inputColumns>
                       <externalMetadataColumns />
                     </input>
@@ -1825,6 +1885,7 @@
                               name="FastParse">false</property>
                           </properties>
                         </outputColumn>
+<<<<<<< HEAD
                         <outputColumn
                           refId="Package\Foreach Loop Container\Staging load\Data Conversion.Outputs[Data Conversion Output].Columns[Copy of F7]"
                           codePage="1252"
@@ -1846,6 +1907,8 @@
                               name="FastParse">false</property>
                           </properties>
                         </outputColumn>
+=======
+>>>>>>> main
                       </outputColumns>
                       <externalMetadataColumns />
                     </output>
@@ -3661,6 +3724,7 @@
                           cachedName="Copy of Derived Column 3"
                           externalMetadataColumnId="Package\Foreach Loop Container\Staging load\OLE DB Destination.Inputs[OLE DB Destination Input].ExternalColumns[SourceFileName]"
                           lineageId="Package\Foreach Loop Container\Staging load\Data Conversion.Outputs[Data Conversion Output].Columns[Copy of Derived Column 3]" />
+<<<<<<< HEAD
                         <inputColumn
                           refId="Package\Foreach Loop Container\Staging load\OLE DB Destination.Inputs[OLE DB Destination Input].Columns[Copy of F7]"
                           cachedCodepage="1252"
@@ -3668,6 +3732,8 @@
                           cachedName="Copy of F7"
                           externalMetadataColumnId="Package\Foreach Loop Container\Staging load\OLE DB Destination.Inputs[OLE DB Destination Input].ExternalColumns[Comments]"
                           lineageId="Package\Foreach Loop Container\Staging load\Data Conversion.Outputs[Data Conversion Output].Columns[Copy of F7]" />
+=======
+>>>>>>> main
                       </inputColumns>
                       <externalMetadataColumns
                         isUsed="True">
@@ -3739,11 +3805,14 @@
                           dataType="str"
                           length="50"
                           name="Billing" />
+<<<<<<< HEAD
                         <externalMetadataColumn
                           refId="Package\Foreach Loop Container\Staging load\OLE DB Destination.Inputs[OLE DB Destination Input].ExternalColumns[Comments]"
                           codePage="1252"
                           dataType="text"
                           name="Comments" />
+=======
+>>>>>>> main
                       </externalMetadataColumns>
                     </input>
                   </inputs>
@@ -3772,6 +3841,7 @@
                     </output>
                   </outputs>
                 </component>
+<<<<<<< HEAD
                 <component
                   refId="Package\Foreach Loop Container\Staging load\Row Count"
                   componentClassID="Microsoft.RowCount"
@@ -3801,11 +3871,17 @@
                     </output>
                   </outputs>
                 </component>
+=======
+>>>>>>> main
               </components>
               <paths>
                 <path
                   refId="Package\Foreach Loop Container\Staging load.Paths[Conditional Split Default Output]"
+<<<<<<< HEAD
                   endId="Package\Foreach Loop Container\Staging load\Row Count.Inputs[Row Count Input 1]"
+=======
+                  endId="Package\Foreach Loop Container\Staging load\OLE DB Destination.Inputs[OLE DB Destination Input]"
+>>>>>>> main
                   name="Conditional Split Default Output"
                   startId="Package\Foreach Loop Container\Staging load\Conditional Split.Outputs[Conditional Split Default Output]" />
                 <path
@@ -3843,11 +3919,14 @@
                   endId="Package\Foreach Loop Container\Staging load\Flat File Destination 3.Inputs[Flat File Destination Input]"
                   name="Junk4"
                   startId="Package\Foreach Loop Container\Staging load\Conditional Split.Outputs[Junk4]" />
+<<<<<<< HEAD
                 <path
                   refId="Package\Foreach Loop Container\Staging load.Paths[Row Count Output 1]"
                   endId="Package\Foreach Loop Container\Staging load\OLE DB Destination.Inputs[OLE DB Destination Input]"
                   name="Row Count Output 1"
                   startId="Package\Foreach Loop Container\Staging load\Row Count.Outputs[Row Count Output 1]" />
+=======
+>>>>>>> main
               </paths>
             </pipeline>
           </DTS:ObjectData>
@@ -3861,7 +3940,12 @@
           DTS:From="Package\Foreach Loop Container\Staging load"
           DTS:LogicalAnd="True"
           DTS:ObjectName="Constraint"
+<<<<<<< HEAD
           DTS:To="Package\Foreach Loop Container\AuditEnd" />
+=======
+          DTS:To="Package\Foreach Loop Container\AuditEnd"
+          DTS:Value="2" />
+>>>>>>> main
         <DTS:PrecedenceConstraint
           DTS:refId="Package\Foreach Loop Container.PrecedenceConstraints[Constraint 4]"
           DTS:CreationName=""
@@ -3874,8 +3958,13 @@
       <DTS:ForEachVariableMappings>
         <DTS:ForEachVariableMapping
           DTS:CreationName=""
+<<<<<<< HEAD
           DTS:DTSID="{B03A523A-5FD7-4869-AFFE-83A865EC4CE9}"
           DTS:ObjectName="{B03A523A-5FD7-4869-AFFE-83A865EC4CE9}"
+=======
+          DTS:DTSID="{44392C81-47BB-40B9-A66D-E5D39DDC4FB1}"
+          DTS:ObjectName="{44392C81-47BB-40B9-A66D-E5D39DDC4FB1}"
+>>>>>>> main
           DTS:ValueIndex="0"
           DTS:VariableName="User::FilePath" />
       </DTS:ForEachVariableMappings>
@@ -3883,7 +3972,10 @@
     <DTS:Executable
       DTS:refId="Package\Production Table Loading"
       DTS:CreationName="STOCK:SEQUENCE"
+<<<<<<< HEAD
       DTS:DelayValidation="True"
+=======
+>>>>>>> main
       DTS:Description="Sequence Container"
       DTS:DTSID="{83D3584C-76C1-4445-B482-DD802F44FFCA}"
       DTS:ExecutableType="STOCK:SEQUENCE"
@@ -3892,6 +3984,7 @@
       <DTS:Variables />
       <DTS:Executables>
         <DTS:Executable
+<<<<<<< HEAD
           DTS:refId="Package\Production Table Loading\AuditEnd"
           DTS:CreationName="Microsoft.ExecuteSQLTask"
           DTS:Description="Execute SQL Task"
@@ -5267,6 +5360,8 @@ where [refTable].[LeaveType] = ?</property>
           </DTS:ObjectData>
         </DTS:Executable>
         <DTS:Executable
+=======
+>>>>>>> main
           DTS:refId="Package\Production Table Loading\DBOEmployee Load"
           DTS:CreationName="Microsoft.Pipeline"
           DTS:Description="Data Flow Task"
@@ -5276,6 +5371,7 @@ where [refTable].[LeaveType] = ?</property>
           DTS:ObjectName="DBOEmployee Load"
           DTS:TaskContact="Performs high-performance data extraction, transformation and loading;Microsoft Corporation; Microsoft SQL Server; (C) Microsoft Corporation; All Rights Reserved;http://www.microsoft.com/sql/support/default.asp;1">
           <DTS:Variables />
+<<<<<<< HEAD
           <DTS:EventHandlers>
             <DTS:EventHandler
               DTS:refId="Package\Production Table Loading\DBOEmployee Load.EventHandlers[OnError]"
@@ -5340,6 +5436,8 @@ where [refTable].[LeaveType] = ?</property>
               </DTS:PrecedenceConstraints>
             </DTS:EventHandler>
           </DTS:EventHandlers>
+=======
+>>>>>>> main
           <DTS:ObjectData>
             <pipeline
               version="1">
@@ -5582,7 +5680,11 @@ where [refTable].[FirstName] = ? and [refTable].[LastName] = ?</property>
                           length="50"
                           lineageId="Package\Production Table Loading\DBOEmployee Load\Employee Lookup.Outputs[Lookup Match Output].Columns[FirstName]"
                           name="FirstName"
+<<<<<<< HEAD
                           truncationRowDisposition="IgnoreFailure">
+=======
+                          truncationRowDisposition="RedirectRow">
+>>>>>>> main
                           <properties>
                             <property
                               dataType="System.String"
@@ -5598,7 +5700,11 @@ where [refTable].[FirstName] = ? and [refTable].[LastName] = ?</property>
                           length="50"
                           lineageId="Package\Production Table Loading\DBOEmployee Load\Employee Lookup.Outputs[Lookup Match Output].Columns[LastName]"
                           name="LastName"
+<<<<<<< HEAD
                           truncationRowDisposition="IgnoreFailure">
+=======
+                          truncationRowDisposition="RedirectRow">
+>>>>>>> main
                           <properties>
                             <property
                               dataType="System.String"
@@ -5642,6 +5748,214 @@ where [refTable].[FirstName] = ? and [refTable].[LastName] = ?</property>
                   </outputs>
                 </component>
                 <component
+<<<<<<< HEAD
+=======
+                  refId="Package\Production Table Loading\DBOEmployee Load\Flat File Destination"
+                  componentClassID="Microsoft.FlatFileDestination"
+                  contactInfo="Flat File Destination;Microsoft Corporation; Microsoft SQL Server; (C) Microsoft Corporation; All Rights Reserved; http://www.microsoft.com/sql/support;1"
+                  description="Flat File Destination"
+                  localeId="7177"
+                  name="Flat File Destination"
+                  version="1">
+                  <properties>
+                    <property
+                      dataType="System.Boolean"
+                      description="Specifies whether the data will overwrite or append to the destination file."
+                      name="Overwrite">true</property>
+                    <property
+                      dataType="System.Null"
+                      description="Specifies the text to write to the destination file before any data is written."
+                      expressionType="Notify"
+                      name="Header" />
+                    <property
+                      dataType="System.Boolean"
+                      description="When text qualifier is enabled, specifies whether the text qualifier in the data written to the destination file will be escaped or not."
+                      name="EscapeQualifier">false</property>
+                  </properties>
+                  <connections>
+                    <connection
+                      refId="Package\Production Table Loading\DBOEmployee Load\Flat File Destination.Connections[FlatFileConnection]"
+                      connectionManagerID="Package.ConnectionManagers[Flat File Connection Manager]"
+                      connectionManagerRefId="Package.ConnectionManagers[Flat File Connection Manager]"
+                      name="FlatFileConnection" />
+                  </connections>
+                  <inputs>
+                    <input
+                      refId="Package\Production Table Loading\DBOEmployee Load\Flat File Destination.Inputs[Flat File Destination Input]"
+                      hasSideEffects="true"
+                      name="Flat File Destination Input">
+                      <inputColumns>
+                        <inputColumn
+                          refId="Package\Production Table Loading\DBOEmployee Load\Flat File Destination.Inputs[Flat File Destination Input].Columns[FirstName]"
+                          cachedCodepage="1252"
+                          cachedDataType="str"
+                          cachedLength="50"
+                          cachedName="FirstName"
+                          cachedSortKeyPosition="1"
+                          externalMetadataColumnId="Package\Production Table Loading\DBOEmployee Load\Flat File Destination.Inputs[Flat File Destination Input].ExternalColumns[FirstName]"
+                          lineageId="Package\Production Table Loading\DBOEmployee Load\Sort.Outputs[Sort Output].Columns[FirstName]" />
+                        <inputColumn
+                          refId="Package\Production Table Loading\DBOEmployee Load\Flat File Destination.Inputs[Flat File Destination Input].Columns[LastName]"
+                          cachedCodepage="1252"
+                          cachedDataType="str"
+                          cachedLength="50"
+                          cachedName="LastName"
+                          cachedSortKeyPosition="2"
+                          externalMetadataColumnId="Package\Production Table Loading\DBOEmployee Load\Flat File Destination.Inputs[Flat File Destination Input].ExternalColumns[LastName]"
+                          lineageId="Package\Production Table Loading\DBOEmployee Load\Sort.Outputs[Sort Output].Columns[LastName]" />
+                        <inputColumn
+                          refId="Package\Production Table Loading\DBOEmployee Load\Flat File Destination.Inputs[Flat File Destination Input].Columns[ActivityName]"
+                          cachedCodepage="1252"
+                          cachedDataType="str"
+                          cachedLength="100"
+                          cachedName="ActivityName"
+                          externalMetadataColumnId="Package\Production Table Loading\DBOEmployee Load\Flat File Destination.Inputs[Flat File Destination Input].ExternalColumns[ActivityName]"
+                          lineageId="Package\Production Table Loading\DBOEmployee Load\Sort.Outputs[Sort Output].Columns[ActivityName]" />
+                        <inputColumn
+                          refId="Package\Production Table Loading\DBOEmployee Load\Flat File Destination.Inputs[Flat File Destination Input].Columns[ClientName]"
+                          cachedCodepage="1252"
+                          cachedDataType="str"
+                          cachedLength="150"
+                          cachedName="ClientName"
+                          externalMetadataColumnId="Package\Production Table Loading\DBOEmployee Load\Flat File Destination.Inputs[Flat File Destination Input].ExternalColumns[ClientName]"
+                          lineageId="Package\Production Table Loading\DBOEmployee Load\Sort.Outputs[Sort Output].Columns[ClientName]" />
+                        <inputColumn
+                          refId="Package\Production Table Loading\DBOEmployee Load\Flat File Destination.Inputs[Flat File Destination Input].Columns[ClientProject]"
+                          cachedCodepage="1252"
+                          cachedDataType="str"
+                          cachedLength="150"
+                          cachedName="ClientProject"
+                          externalMetadataColumnId="Package\Production Table Loading\DBOEmployee Load\Flat File Destination.Inputs[Flat File Destination Input].ExternalColumns[ClientProject]"
+                          lineageId="Package\Production Table Loading\DBOEmployee Load\Sort.Outputs[Sort Output].Columns[ClientProject]" />
+                        <inputColumn
+                          refId="Package\Production Table Loading\DBOEmployee Load\Flat File Destination.Inputs[Flat File Destination Input].Columns[WorkDay]"
+                          cachedCodepage="1252"
+                          cachedDataType="str"
+                          cachedLength="50"
+                          cachedName="WorkDay"
+                          externalMetadataColumnId="Package\Production Table Loading\DBOEmployee Load\Flat File Destination.Inputs[Flat File Destination Input].ExternalColumns[WorkDay]"
+                          lineageId="Package\Production Table Loading\DBOEmployee Load\Sort.Outputs[Sort Output].Columns[WorkDay]" />
+                        <inputColumn
+                          refId="Package\Production Table Loading\DBOEmployee Load\Flat File Destination.Inputs[Flat File Destination Input].Columns[WorkDate]"
+                          cachedDataType="wstr"
+                          cachedLength="10"
+                          cachedName="WorkDate"
+                          externalMetadataColumnId="Package\Production Table Loading\DBOEmployee Load\Flat File Destination.Inputs[Flat File Destination Input].ExternalColumns[WorkDate]"
+                          lineageId="Package\Production Table Loading\DBOEmployee Load\Sort.Outputs[Sort Output].Columns[WorkDate]" />
+                        <inputColumn
+                          refId="Package\Production Table Loading\DBOEmployee Load\Flat File Destination.Inputs[Flat File Destination Input].Columns[HoursWorked]"
+                          cachedDataType="wstr"
+                          cachedLength="16"
+                          cachedName="HoursWorked"
+                          externalMetadataColumnId="Package\Production Table Loading\DBOEmployee Load\Flat File Destination.Inputs[Flat File Destination Input].ExternalColumns[HoursWorked]"
+                          lineageId="Package\Production Table Loading\DBOEmployee Load\Sort.Outputs[Sort Output].Columns[HoursWorked]" />
+                        <inputColumn
+                          refId="Package\Production Table Loading\DBOEmployee Load\Flat File Destination.Inputs[Flat File Destination Input].Columns[StartTime]"
+                          cachedDataType="wstr"
+                          cachedLength="16"
+                          cachedName="StartTime"
+                          externalMetadataColumnId="Package\Production Table Loading\DBOEmployee Load\Flat File Destination.Inputs[Flat File Destination Input].ExternalColumns[StartTime]"
+                          lineageId="Package\Production Table Loading\DBOEmployee Load\Sort.Outputs[Sort Output].Columns[StartTime]" />
+                        <inputColumn
+                          refId="Package\Production Table Loading\DBOEmployee Load\Flat File Destination.Inputs[Flat File Destination Input].Columns[EndTime]"
+                          cachedDataType="wstr"
+                          cachedLength="16"
+                          cachedName="EndTime"
+                          externalMetadataColumnId="Package\Production Table Loading\DBOEmployee Load\Flat File Destination.Inputs[Flat File Destination Input].ExternalColumns[EndTime]"
+                          lineageId="Package\Production Table Loading\DBOEmployee Load\Sort.Outputs[Sort Output].Columns[EndTime]" />
+                        <inputColumn
+                          refId="Package\Production Table Loading\DBOEmployee Load\Flat File Destination.Inputs[Flat File Destination Input].Columns[Billing]"
+                          cachedCodepage="1252"
+                          cachedDataType="str"
+                          cachedLength="50"
+                          cachedName="Billing"
+                          externalMetadataColumnId="Package\Production Table Loading\DBOEmployee Load\Flat File Destination.Inputs[Flat File Destination Input].ExternalColumns[Billing]"
+                          lineageId="Package\Production Table Loading\DBOEmployee Load\Sort.Outputs[Sort Output].Columns[Billing]" />
+                        <inputColumn
+                          refId="Package\Production Table Loading\DBOEmployee Load\Flat File Destination.Inputs[Flat File Destination Input].Columns[SourceFileName]"
+                          cachedCodepage="1252"
+                          cachedDataType="str"
+                          cachedLength="255"
+                          cachedName="SourceFileName"
+                          externalMetadataColumnId="Package\Production Table Loading\DBOEmployee Load\Flat File Destination.Inputs[Flat File Destination Input].ExternalColumns[SourceFileName]"
+                          lineageId="Package\Production Table Loading\DBOEmployee Load\Sort.Outputs[Sort Output].Columns[SourceFileName]" />
+                      </inputColumns>
+                      <externalMetadataColumns
+                        isUsed="True">
+                        <externalMetadataColumn
+                          refId="Package\Production Table Loading\DBOEmployee Load\Flat File Destination.Inputs[Flat File Destination Input].ExternalColumns[FirstName]"
+                          codePage="1252"
+                          dataType="str"
+                          length="50"
+                          name="FirstName" />
+                        <externalMetadataColumn
+                          refId="Package\Production Table Loading\DBOEmployee Load\Flat File Destination.Inputs[Flat File Destination Input].ExternalColumns[LastName]"
+                          codePage="1252"
+                          dataType="str"
+                          length="50"
+                          name="LastName" />
+                        <externalMetadataColumn
+                          refId="Package\Production Table Loading\DBOEmployee Load\Flat File Destination.Inputs[Flat File Destination Input].ExternalColumns[ActivityName]"
+                          codePage="1252"
+                          dataType="str"
+                          length="100"
+                          name="ActivityName" />
+                        <externalMetadataColumn
+                          refId="Package\Production Table Loading\DBOEmployee Load\Flat File Destination.Inputs[Flat File Destination Input].ExternalColumns[ClientName]"
+                          codePage="1252"
+                          dataType="str"
+                          length="150"
+                          name="ClientName" />
+                        <externalMetadataColumn
+                          refId="Package\Production Table Loading\DBOEmployee Load\Flat File Destination.Inputs[Flat File Destination Input].ExternalColumns[ClientProject]"
+                          codePage="1252"
+                          dataType="str"
+                          length="150"
+                          name="ClientProject" />
+                        <externalMetadataColumn
+                          refId="Package\Production Table Loading\DBOEmployee Load\Flat File Destination.Inputs[Flat File Destination Input].ExternalColumns[WorkDay]"
+                          codePage="1252"
+                          dataType="str"
+                          length="50"
+                          name="WorkDay" />
+                        <externalMetadataColumn
+                          refId="Package\Production Table Loading\DBOEmployee Load\Flat File Destination.Inputs[Flat File Destination Input].ExternalColumns[WorkDate]"
+                          dataType="wstr"
+                          length="10"
+                          name="WorkDate" />
+                        <externalMetadataColumn
+                          refId="Package\Production Table Loading\DBOEmployee Load\Flat File Destination.Inputs[Flat File Destination Input].ExternalColumns[HoursWorked]"
+                          dataType="wstr"
+                          length="16"
+                          name="HoursWorked" />
+                        <externalMetadataColumn
+                          refId="Package\Production Table Loading\DBOEmployee Load\Flat File Destination.Inputs[Flat File Destination Input].ExternalColumns[StartTime]"
+                          dataType="wstr"
+                          length="16"
+                          name="StartTime" />
+                        <externalMetadataColumn
+                          refId="Package\Production Table Loading\DBOEmployee Load\Flat File Destination.Inputs[Flat File Destination Input].ExternalColumns[EndTime]"
+                          dataType="wstr"
+                          length="16"
+                          name="EndTime" />
+                        <externalMetadataColumn
+                          refId="Package\Production Table Loading\DBOEmployee Load\Flat File Destination.Inputs[Flat File Destination Input].ExternalColumns[Billing]"
+                          codePage="1252"
+                          dataType="str"
+                          length="50"
+                          name="Billing" />
+                        <externalMetadataColumn
+                          refId="Package\Production Table Loading\DBOEmployee Load\Flat File Destination.Inputs[Flat File Destination Input].ExternalColumns[SourceFileName]"
+                          codePage="1252"
+                          dataType="str"
+                          length="255"
+                          name="SourceFileName" />
+                      </externalMetadataColumns>
+                    </input>
+                  </inputs>
+                </component>
+                <component
+>>>>>>> main
                   refId="Package\Production Table Loading\DBOEmployee Load\OLE DB Destination"
                   componentClassID="Microsoft.OLEDBDestination"
                   contactInfo="OLE DB Destination;Microsoft Corporation; Microsoft SQL Server; (C) Microsoft Corporation; All Rights Reserved; http://www.microsoft.com/sql/support;4"
@@ -5750,7 +6064,12 @@ where [refTable].[FirstName] = ? and [refTable].[LastName] = ?</property>
                           name="LastName" />
                         <externalMetadataColumn
                           refId="Package\Production Table Loading\DBOEmployee Load\OLE DB Destination.Inputs[OLE DB Destination Input].ExternalColumns[CreatedDate]"
+<<<<<<< HEAD
                           dataType="dbTimeStamp"
+=======
+                          dataType="wstr"
+                          length="10"
+>>>>>>> main
                           name="CreatedDate" />
                       </externalMetadataColumns>
                     </input>
@@ -6145,6 +6464,7 @@ where [refTable].[FirstName] = ? and [refTable].[LastName] = ?</property>
                   </outputs>
                 </component>
                 <component
+<<<<<<< HEAD
                   refId="Package\Production Table Loading\DBOEmployee Load\Row Count"
                   componentClassID="Microsoft.RowCount"
                   contactInfo="Row Count;Microsoft Corporation; Microsoft SQL Server; (C) Microsoft Corporation; All Rights Reserved; http://www.microsoft.com/sql/support;0"
@@ -6174,6 +6494,8 @@ where [refTable].[FirstName] = ? and [refTable].[LastName] = ?</property>
                   </outputs>
                 </component>
                 <component
+=======
+>>>>>>> main
                   refId="Package\Production Table Loading\DBOEmployee Load\Sort"
                   componentClassID="Microsoft.Sort"
                   contactInfo="Sort;Microsoft Corporation; Microsoft SQL Server; (C) Microsoft Corporation; All Rights Reserved; http://www.microsoft.com/sql/support;1"
@@ -6605,7 +6927,11 @@ where [refTable].[FirstName] = ? and [refTable].[LastName] = ?</property>
               <paths>
                 <path
                   refId="Package\Production Table Loading\DBOEmployee Load.Paths[Conditional Split Default Output]"
+<<<<<<< HEAD
                   endId="Package\Production Table Loading\DBOEmployee Load\Row Count.Inputs[Row Count Input 1]"
+=======
+                  endId="Package\Production Table Loading\DBOEmployee Load\OLE DB Destination.Inputs[OLE DB Destination Input]"
+>>>>>>> main
                   name="Conditional Split Default Output"
                   startId="Package\Production Table Loading\DBOEmployee Load\Conditional Split.Outputs[Conditional Split Default Output]" />
                 <path
@@ -6614,16 +6940,27 @@ where [refTable].[FirstName] = ? and [refTable].[LastName] = ?</property>
                   name="Lookup Match Output"
                   startId="Package\Production Table Loading\DBOEmployee Load\Employee Lookup.Outputs[Lookup Match Output]" />
                 <path
+<<<<<<< HEAD
+=======
+                  refId="Package\Production Table Loading\DBOEmployee Load.Paths[Lookup No Match Output]"
+                  endId="Package\Production Table Loading\DBOEmployee Load\Flat File Destination.Inputs[Flat File Destination Input]"
+                  name="Lookup No Match Output"
+                  startId="Package\Production Table Loading\DBOEmployee Load\Employee Lookup.Outputs[Lookup No Match Output]" />
+                <path
+>>>>>>> main
                   refId="Package\Production Table Loading\DBOEmployee Load.Paths[OLE DB Source Output]"
                   endId="Package\Production Table Loading\DBOEmployee Load\Sort.Inputs[Sort Input]"
                   name="OLE DB Source Output"
                   startId="Package\Production Table Loading\DBOEmployee Load\OLE DB Source.Outputs[OLE DB Source Output]" />
                 <path
+<<<<<<< HEAD
                   refId="Package\Production Table Loading\DBOEmployee Load.Paths[Row Count Output 1]"
                   endId="Package\Production Table Loading\DBOEmployee Load\OLE DB Destination.Inputs[OLE DB Destination Input]"
                   name="Row Count Output 1"
                   startId="Package\Production Table Loading\DBOEmployee Load\Row Count.Outputs[Row Count Output 1]" />
                 <path
+=======
+>>>>>>> main
                   refId="Package\Production Table Loading\DBOEmployee Load.Paths[Sort Output]"
                   endId="Package\Production Table Loading\DBOEmployee Load\Employee Lookup.Inputs[Lookup Input]"
                   name="Sort Output"
@@ -6633,6 +6970,27 @@ where [refTable].[FirstName] = ? and [refTable].[LastName] = ?</property>
           </DTS:ObjectData>
         </DTS:Executable>
         <DTS:Executable
+<<<<<<< HEAD
+=======
+          DTS:refId="Package\Production Table Loading\DBOEmployeeLeave load"
+          DTS:CreationName="Microsoft.ExecuteSQLTask"
+          DTS:Description="Execute SQL Task"
+          DTS:DTSID="{113063A0-B3B9-45F7-8778-6B93F9B1B23A}"
+          DTS:ExecutableType="Microsoft.ExecuteSQLTask"
+          DTS:LocaleID="-1"
+          DTS:MaxErrorCount="0"
+          DTS:ObjectName="DBOEmployeeLeave load"
+          DTS:TaskContact="Execute SQL Task; Microsoft Corporation; SQL Server 2025; © 2025 Microsoft Corporation; All Rights Reserved;http://www.microsoft.com/sql/support/default.asp;1"
+          DTS:ThreadHint="0">
+          <DTS:Variables />
+          <DTS:ObjectData>
+            <SQLTask:SqlTaskData
+              SQLTask:Connection="{1541D4DB-23C4-4DC3-9CEB-40F1C7A44285}"
+              SQLTask:SqlStatementSource="INSERT INTO EmployeeLeave&#xA;(&#xA;    EmployeeID,&#xA;    LeaveTypeID,&#xA;    LeaveDate,&#xA;    HoursTaken,&#xA;    SourceFileName&#xA;)&#xA;SELECT&#xA;    e.EmployeeID,&#xA;    l.LeaveTypeID,&#xA;    s.WorkDate,&#xA;    s.HoursWorked,&#xA;    s.SourceFileName&#xA;FROM Stg_Timesheet s&#xA;JOIN Employee e&#xA;    ON e.FirstName = s.FirstName&#xA;   AND e.LastName = s.LastName&#xA;JOIN LeaveType l&#xA;    ON UPPER(LTRIM(RTRIM(s.ActivityName))) =&#xA;       UPPER(LTRIM(RTRIM(l.LeaveType)))&#xA;WHERE NOT EXISTS (&#xA;    SELECT 1&#xA;    FROM EmployeeLeave el&#xA;    WHERE el.EmployeeID = e.EmployeeID&#xA;      AND el.LeaveDate = s.WorkDate&#xA;);" xmlns:SQLTask="www.microsoft.com/sqlserver/dts/tasks/sqltask" />
+          </DTS:ObjectData>
+        </DTS:Executable>
+        <DTS:Executable
+>>>>>>> main
           DTS:refId="Package\Production Table Loading\DBOTimesheet Load"
           DTS:CreationName="Microsoft.Pipeline"
           DTS:Description="Data Flow Task"
@@ -7188,6 +7546,7 @@ where [refTable].[ClientName] = ? and [refTable].[ClientProject] = ?</property>
                           cachedLength="255"
                           cachedName="SourceFileName"
                           lineageId="Package\Production Table Loading\DBOTimesheet Load\OLE DB Source.Outputs[OLE DB Source Output].Columns[SourceFileName]" />
+<<<<<<< HEAD
                         <inputColumn
                           refId="Package\Production Table Loading\DBOTimesheet Load\Derived Column.Inputs[Derived Column Input].Columns[StartTime]"
                           cachedDataType="wstr"
@@ -7206,6 +7565,8 @@ where [refTable].[ClientName] = ? and [refTable].[ClientProject] = ?</property>
                           cachedLength="16"
                           cachedName="EndTime"
                           lineageId="Package\Production Table Loading\DBOTimesheet Load\OLE DB Source.Outputs[OLE DB Source Output].Columns[EndTime]" />
+=======
+>>>>>>> main
                       </inputColumns>
                       <externalMetadataColumns />
                     </input>
@@ -7307,6 +7668,7 @@ where [refTable].[ClientName] = ? and [refTable].[ClientProject] = ?</property>
                               name="FriendlyExpression">UPPER(SUBSTRING(SourceFileName,1,1)) + UPPER(SUBSTRING(SourceFileName,FINDSTRING(SourceFileName,"_",1) + 1,1)) + SUBSTRING(SourceFileName,FINDSTRING(SourceFileName,"_",2) + 1,3)</property>
                           </properties>
                         </outputColumn>
+<<<<<<< HEAD
                         <outputColumn
                           refId="Package\Production Table Loading\DBOTimesheet Load\Derived Column.Outputs[Derived Column Output].Columns[Start]"
                           dataType="wstr"
@@ -7376,6 +7738,8 @@ where [refTable].[ClientName] = ? and [refTable].[ClientProject] = ?</property>
                               name="FriendlyExpression">(DT_WSTR,5)HoursWorked</property>
                           </properties>
                         </outputColumn>
+=======
+>>>>>>> main
                       </outputColumns>
                       <externalMetadataColumns />
                     </output>
@@ -7667,6 +8031,17 @@ where [refTable].[FirstName] = ? and [refTable].[LastName] = ?</property>
                           externalMetadataColumnId="Package\Production Table Loading\DBOTimesheet Load\OLE DB Destination.Inputs[OLE DB Destination Input].ExternalColumns[ActivityID]"
                           lineageId="Package\Production Table Loading\DBOTimesheet Load\Derived Column.Outputs[Derived Column Output].Columns[ActID]" />
                         <inputColumn
+<<<<<<< HEAD
+=======
+                          refId="Package\Production Table Loading\DBOTimesheet Load\OLE DB Destination.Inputs[OLE DB Destination Input].Columns[ClientProject]"
+                          cachedCodepage="1252"
+                          cachedDataType="str"
+                          cachedLength="150"
+                          cachedName="ClientProject"
+                          externalMetadataColumnId="Package\Production Table Loading\DBOTimesheet Load\OLE DB Destination.Inputs[OLE DB Destination Input].ExternalColumns[ClientProject]"
+                          lineageId="Package\Production Table Loading\DBOTimesheet Load\OLE DB Source.Outputs[OLE DB Source Output].Columns[ClientProject]" />
+                        <inputColumn
+>>>>>>> main
                           refId="Package\Production Table Loading\DBOTimesheet Load\OLE DB Destination.Inputs[OLE DB Destination Input].Columns[WorkDate]"
                           cachedDataType="wstr"
                           cachedLength="10"
@@ -7704,6 +8079,7 @@ where [refTable].[FirstName] = ? and [refTable].[LastName] = ?</property>
                           externalMetadataColumnId="Package\Production Table Loading\DBOTimesheet Load\OLE DB Destination.Inputs[OLE DB Destination Input].ExternalColumns[TimesheetCode]"
                           lineageId="Package\Production Table Loading\DBOTimesheet Load\Data Conversion.Outputs[Data Conversion Output].Columns[Copy of Code]" />
                         <inputColumn
+<<<<<<< HEAD
                           refId="Package\Production Table Loading\DBOTimesheet Load\OLE DB Destination.Inputs[OLE DB Destination Input].Columns[Start]"
                           cachedDataType="wstr"
                           cachedLength="5"
@@ -7731,10 +8107,41 @@ where [refTable].[FirstName] = ? and [refTable].[LastName] = ?</property>
                           cachedName="Comments"
                           externalMetadataColumnId="Package\Production Table Loading\DBOTimesheet Load\OLE DB Destination.Inputs[OLE DB Destination Input].ExternalColumns[Comments]"
                           lineageId="Package\Production Table Loading\DBOTimesheet Load\OLE DB Source.Outputs[OLE DB Source Output].Columns[Comments]" />
+=======
+                          refId="Package\Production Table Loading\DBOTimesheet Load\OLE DB Destination.Inputs[OLE DB Destination Input].Columns[StartTime]"
+                          cachedDataType="wstr"
+                          cachedLength="16"
+                          cachedName="StartTime"
+                          externalMetadataColumnId="Package\Production Table Loading\DBOTimesheet Load\OLE DB Destination.Inputs[OLE DB Destination Input].ExternalColumns[StartTime]"
+                          lineageId="Package\Production Table Loading\DBOTimesheet Load\OLE DB Source.Outputs[OLE DB Source Output].Columns[StartTime]" />
+                        <inputColumn
+                          refId="Package\Production Table Loading\DBOTimesheet Load\OLE DB Destination.Inputs[OLE DB Destination Input].Columns[EndTime]"
+                          cachedDataType="wstr"
+                          cachedLength="16"
+                          cachedName="EndTime"
+                          externalMetadataColumnId="Package\Production Table Loading\DBOTimesheet Load\OLE DB Destination.Inputs[OLE DB Destination Input].ExternalColumns[EndTime]"
+                          lineageId="Package\Production Table Loading\DBOTimesheet Load\OLE DB Source.Outputs[OLE DB Source Output].Columns[EndTime]" />
+                        <inputColumn
+                          refId="Package\Production Table Loading\DBOTimesheet Load\OLE DB Destination.Inputs[OLE DB Destination Input].Columns[HoursWorked]"
+                          cachedDataType="wstr"
+                          cachedLength="16"
+                          cachedName="HoursWorked"
+                          externalMetadataColumnId="Package\Production Table Loading\DBOTimesheet Load\OLE DB Destination.Inputs[OLE DB Destination Input].ExternalColumns[HoursWorked]"
+                          lineageId="Package\Production Table Loading\DBOTimesheet Load\OLE DB Source.Outputs[OLE DB Source Output].Columns[HoursWorked]" />
+>>>>>>> main
                       </inputColumns>
                       <externalMetadataColumns
                         isUsed="True">
                         <externalMetadataColumn
+<<<<<<< HEAD
+=======
+                          refId="Package\Production Table Loading\DBOTimesheet Load\OLE DB Destination.Inputs[OLE DB Destination Input].ExternalColumns[ClientProject]"
+                          codePage="1252"
+                          dataType="str"
+                          length="150"
+                          name="ClientProject" />
+                        <externalMetadataColumn
+>>>>>>> main
                           refId="Package\Production Table Loading\DBOTimesheet Load\OLE DB Destination.Inputs[OLE DB Destination Input].ExternalColumns[WorkDate]"
                           dataType="wstr"
                           length="10"
@@ -7742,17 +8149,29 @@ where [refTable].[FirstName] = ? and [refTable].[LastName] = ?</property>
                         <externalMetadataColumn
                           refId="Package\Production Table Loading\DBOTimesheet Load\OLE DB Destination.Inputs[OLE DB Destination Input].ExternalColumns[HoursWorked]"
                           dataType="wstr"
+<<<<<<< HEAD
                           length="5"
+=======
+                          length="16"
+>>>>>>> main
                           name="HoursWorked" />
                         <externalMetadataColumn
                           refId="Package\Production Table Loading\DBOTimesheet Load\OLE DB Destination.Inputs[OLE DB Destination Input].ExternalColumns[StartTime]"
                           dataType="wstr"
+<<<<<<< HEAD
                           length="5"
+=======
+                          length="16"
+>>>>>>> main
                           name="StartTime" />
                         <externalMetadataColumn
                           refId="Package\Production Table Loading\DBOTimesheet Load\OLE DB Destination.Inputs[OLE DB Destination Input].ExternalColumns[EndTime]"
                           dataType="wstr"
+<<<<<<< HEAD
                           length="5"
+=======
+                          length="16"
+>>>>>>> main
                           name="EndTime" />
                         <externalMetadataColumn
                           refId="Package\Production Table Loading\DBOTimesheet Load\OLE DB Destination.Inputs[OLE DB Destination Input].ExternalColumns[Billing]"
@@ -7792,11 +8211,14 @@ where [refTable].[FirstName] = ? and [refTable].[LastName] = ?</property>
                           dataType="str"
                           length="20"
                           name="TimesheetCode" />
+<<<<<<< HEAD
                         <externalMetadataColumn
                           refId="Package\Production Table Loading\DBOTimesheet Load\OLE DB Destination.Inputs[OLE DB Destination Input].ExternalColumns[Comments]"
                           codePage="1252"
                           dataType="text"
                           name="Comments" />
+=======
+>>>>>>> main
                       </externalMetadataColumns>
                     </input>
                   </inputs>
@@ -8014,6 +8436,7 @@ where [refTable].[FirstName] = ? and [refTable].[LastName] = ?</property>
                           lineageId="Package\Production Table Loading\DBOTimesheet Load\OLE DB Source.Outputs[OLE DB Source Output].Columns[SourceFileName]"
                           name="SourceFileName"
                           truncationRowDisposition="IgnoreFailure" />
+<<<<<<< HEAD
                         <outputColumn
                           refId="Package\Production Table Loading\DBOTimesheet Load\OLE DB Source.Outputs[OLE DB Source Output].Columns[Comments]"
                           codePage="1252"
@@ -8024,6 +8447,8 @@ where [refTable].[FirstName] = ? and [refTable].[LastName] = ?</property>
                           lineageId="Package\Production Table Loading\DBOTimesheet Load\OLE DB Source.Outputs[OLE DB Source Output].Columns[Comments]"
                           name="Comments"
                           truncationRowDisposition="FailComponent" />
+=======
+>>>>>>> main
                       </outputColumns>
                       <externalMetadataColumns
                         isUsed="True">
@@ -8095,11 +8520,14 @@ where [refTable].[FirstName] = ? and [refTable].[LastName] = ?</property>
                           dataType="str"
                           length="255"
                           name="SourceFileName" />
+<<<<<<< HEAD
                         <externalMetadataColumn
                           refId="Package\Production Table Loading\DBOTimesheet Load\OLE DB Source.Outputs[OLE DB Source Output].ExternalColumns[Comments]"
                           codePage="1252"
                           dataType="text"
                           name="Comments" />
+=======
+>>>>>>> main
                       </externalMetadataColumns>
                     </output>
                     <output
@@ -8156,12 +8584,15 @@ where [refTable].[FirstName] = ? and [refTable].[LastName] = ?</property>
                           lineageId="Package\Production Table Loading\DBOTimesheet Load\OLE DB Source.Outputs[OLE DB Source Error Output].Columns[WorkDate]"
                           name="WorkDate" />
                         <outputColumn
+<<<<<<< HEAD
                           refId="Package\Production Table Loading\DBOTimesheet Load\OLE DB Source.Outputs[OLE DB Source Error Output].Columns[Comments]"
                           codePage="1252"
                           dataType="text"
                           lineageId="Package\Production Table Loading\DBOTimesheet Load\OLE DB Source.Outputs[OLE DB Source Error Output].Columns[Comments]"
                           name="Comments" />
                         <outputColumn
+=======
+>>>>>>> main
                           refId="Package\Production Table Loading\DBOTimesheet Load\OLE DB Source.Outputs[OLE DB Source Error Output].Columns[HoursWorked]"
                           dataType="wstr"
                           length="16"
@@ -8210,6 +8641,7 @@ where [refTable].[FirstName] = ? and [refTable].[LastName] = ?</property>
                     </output>
                   </outputs>
                 </component>
+<<<<<<< HEAD
                 <component
                   refId="Package\Production Table Loading\DBOTimesheet Load\Row Count"
                   componentClassID="Microsoft.RowCount"
@@ -8239,6 +8671,8 @@ where [refTable].[FirstName] = ? and [refTable].[LastName] = ?</property>
                     </output>
                   </outputs>
                 </component>
+=======
+>>>>>>> main
               </components>
               <paths>
                 <path
@@ -8248,7 +8682,11 @@ where [refTable].[FirstName] = ? and [refTable].[LastName] = ?</property>
                   startId="Package\Production Table Loading\DBOTimesheet Load\Conditional Split.Outputs[Conditional Split Default Output]" />
                 <path
                   refId="Package\Production Table Loading\DBOTimesheet Load.Paths[Data Conversion Output]"
+<<<<<<< HEAD
                   endId="Package\Production Table Loading\DBOTimesheet Load\Row Count.Inputs[Row Count Input 1]"
+=======
+                  endId="Package\Production Table Loading\DBOTimesheet Load\OLE DB Destination.Inputs[OLE DB Destination Input]"
+>>>>>>> main
                   name="Data Conversion Output"
                   startId="Package\Production Table Loading\DBOTimesheet Load\Data Conversion.Outputs[Data Conversion Output]" />
                 <path
@@ -8276,11 +8714,14 @@ where [refTable].[FirstName] = ? and [refTable].[LastName] = ?</property>
                   endId="Package\Production Table Loading\DBOTimesheet Load\Conditional Split.Inputs[Conditional Split Input]"
                   name="OLE DB Source Output"
                   startId="Package\Production Table Loading\DBOTimesheet Load\OLE DB Source.Outputs[OLE DB Source Output]" />
+<<<<<<< HEAD
                 <path
                   refId="Package\Production Table Loading\DBOTimesheet Load.Paths[Row Count Output 1]"
                   endId="Package\Production Table Loading\DBOTimesheet Load\OLE DB Destination.Inputs[OLE DB Destination Input]"
                   name="Row Count Output 1"
                   startId="Package\Production Table Loading\DBOTimesheet Load\Row Count.Outputs[Row Count Output 1]" />
+=======
+>>>>>>> main
               </paths>
             </pipeline>
           </DTS:ObjectData>
@@ -8288,6 +8729,7 @@ where [refTable].[FirstName] = ? and [refTable].[LastName] = ?</property>
       </DTS:Executables>
       <DTS:PrecedenceConstraints>
         <DTS:PrecedenceConstraint
+<<<<<<< HEAD
           DTS:refId="Package\Production Table Loading.PrecedenceConstraints[Constraint]"
           DTS:CreationName=""
           DTS:DTSID="{C753795F-2BC7-49F9-96F6-342FB1341DF8}"
@@ -8416,6 +8858,24 @@ where [refTable].[FirstName] = ? and [refTable].[LastName] = ?</property>
           </DTS:PrecedenceConstraints>
         </DTS:EventHandler>
       </DTS:EventHandlers>
+=======
+          DTS:refId="Package\Production Table Loading.PrecedenceConstraints[Constraint 1]"
+          DTS:CreationName=""
+          DTS:DTSID="{6FD3A14E-C99B-4A06-8483-BFBD19A7CF6D}"
+          DTS:From="Package\Production Table Loading\DBOEmployee Load"
+          DTS:LogicalAnd="True"
+          DTS:ObjectName="Constraint 1"
+          DTS:To="Package\Production Table Loading\DBOTimesheet Load" />
+        <DTS:PrecedenceConstraint
+          DTS:refId="Package\Production Table Loading.PrecedenceConstraints[Constraint 2]"
+          DTS:CreationName=""
+          DTS:DTSID="{4E2B1C9E-F3AB-41A0-9508-0558764D4C95}"
+          DTS:From="Package\Production Table Loading\DBOTimesheet Load"
+          DTS:LogicalAnd="True"
+          DTS:ObjectName="Constraint 2"
+          DTS:To="Package\Production Table Loading\DBOEmployeeLeave load" />
+      </DTS:PrecedenceConstraints>
+>>>>>>> main
     </DTS:Executable>
   </DTS:Executables>
   <DTS:PrecedenceConstraints>
@@ -8511,6 +8971,7 @@ where [refTable].[FirstName] = ? and [refTable].[LastName] = ?</property>
     design-time-name="Package">
     <LayoutInfo>
       <GraphLayout
+<<<<<<< HEAD
         Capacity="32" xmlns="clr-namespace:Microsoft.SqlServer.IntegrationServices.Designer.Model.Serialization;assembly=Microsoft.SqlServer.IntegrationServices.Graph" xmlns:mssgle="clr-namespace:Microsoft.SqlServer.Graph.LayoutEngine;assembly=Microsoft.SqlServer.Graph" xmlns:assembly="http://schemas.microsoft.com/winfx/2006/xaml">
         <NodeLayout
           Size="164.8,41.6"
@@ -8529,11 +8990,35 @@ where [refTable].[FirstName] = ? and [refTable].[LastName] = ?</property>
               EndConnector="0,22.5333328873583"
               Start="0,0"
               End="0,15.0333328873583">
+=======
+        Capacity="32" xmlns="clr-namespace:Microsoft.SqlServer.IntegrationServices.Designer.Model.Serialization;assembly=Microsoft.SqlServer.IntegrationServices.Graph" xmlns:mssgle="clr-namespace:Microsoft.SqlServer.Graph.LayoutEngine;assembly=Microsoft.SqlServer.Graph" xmlns:assembly="http://schemas.microsoft.com/winfx/2006/xaml" xmlns:mssgm="clr-namespace:Microsoft.SqlServer.Graph.Model;assembly=Microsoft.SqlServer.Graph">
+        <NodeLayout
+          Size="136,41.6"
+          Id="Package\Foreach Loop Container\Staging load"
+          TopLeft="61.1571253536009,87.4380940904412" />
+        <NodeLayout
+          Size="164.8,41.6"
+          Id="Package\Foreach Loop Container\AuditStart"
+          TopLeft="45.8856921965176,16.3142851279747" />
+        <EdgeLayout
+          Id="Package\Foreach Loop Container.PrecedenceConstraints[Constraint 4]"
+          TopLeft="128.721408775059,57.9142851279747">
+          <EdgeLayout.Curve>
+            <mssgle:Curve
+              StartConnector="{assembly:Null}"
+              EndConnector="0,29.5238089624666"
+              Start="0,0"
+              End="0,22.0238089624666">
+>>>>>>> main
               <mssgle:Curve.Segments>
                 <mssgle:SegmentCollection
                   Capacity="5">
                   <mssgle:LineSegment
+<<<<<<< HEAD
                     End="0,15.0333328873583" />
+=======
+                    End="0,22.0238089624666" />
+>>>>>>> main
                 </mssgle:SegmentCollection>
               </mssgle:Curve.Segments>
             </mssgle:Curve>
@@ -8542,6 +9027,7 @@ where [refTable].[FirstName] = ? and [refTable].[LastName] = ?</property>
             <EdgeLabelCollection />
           </EdgeLayout.Labels>
         </EdgeLayout>
+<<<<<<< HEAD
         <ContainerLayout
           HeaderHeight="43"
           IsExpanded="True"
@@ -8549,10 +9035,13 @@ where [refTable].[FirstName] = ? and [refTable].[LastName] = ?</property>
           Size="253.6,216.8"
           Id="Package\Database &amp; Table Creation"
           TopLeft="28.9285698479842,316.576188569604" />
+=======
+>>>>>>> main
         <NodeLayout
           Size="120.8,41.6"
           Id="Package\Foreach Loop Container\AuditEnd"
           TopLeft="69.0999766424314,168.304760968042" />
+<<<<<<< HEAD
         <NodeLayout
           Size="124,41.6"
           Id="Package\Foreach Loop Container\AuditStart"
@@ -8561,6 +9050,8 @@ where [refTable].[FirstName] = ? and [refTable].[LastName] = ?</property>
           Size="136,41.6"
           Id="Package\Foreach Loop Container\Staging load"
           TopLeft="61.1571253536009,87.4380940904412" />
+=======
+>>>>>>> main
         <EdgeLayout
           Id="Package\Foreach Loop Container.PrecedenceConstraints[Constraint]"
           TopLeft="129.328550998016,129.038094090441">
@@ -8580,6 +9071,7 @@ where [refTable].[FirstName] = ? and [refTable].[LastName] = ?</property>
             </mssgle:Curve>
           </EdgeLayout.Curve>
           <EdgeLayout.Labels>
+<<<<<<< HEAD
             <EdgeLabelCollection />
           </EdgeLayout.Labels>
         </EdgeLayout>
@@ -8592,11 +9084,46 @@ where [refTable].[FirstName] = ? and [refTable].[LastName] = ?</property>
               EndConnector="0,31.9999994214379"
               Start="0,0"
               End="0,24.4999994214379">
+=======
+            <mssgm:EdgeLabel
+              BoundingBox="-25.304453125,10.0786459388005,50.60890625,11.609375"
+              RelativePosition="Any" />
+          </EdgeLayout.Labels>
+        </EdgeLayout>
+        <ContainerLayout
+          HeaderHeight="43"
+          IsExpanded="True"
+          PanelSize="248,256"
+          Size="248,299.2"
+          Id="Package\Foreach Loop Container"
+          TopLeft="389.676218588531,98.7999993129572" />
+        <NodeLayout
+          Size="164.8,41.6"
+          Id="Package\Database &amp; Table Creation\DB creation"
+          TopLeft="31.7999969949327,7.59999880671501" />
+        <NodeLayout
+          Size="164.8,41.6"
+          Id="Package\Database &amp; Table Creation\Execute SQL Task"
+          TopLeft="36.7999967217447,80.399998300473" />
+        <EdgeLayout
+          Id="Package\Database &amp; Table Creation.PrecedenceConstraints[Constraint]"
+          TopLeft="116.699996858339,49.199998806715">
+          <EdgeLayout.Curve>
+            <mssgle:Curve
+              StartConnector="{assembly:Null}"
+              EndConnector="0,31.199999493758"
+              Start="0,0"
+              End="0,23.699999493758">
+>>>>>>> main
               <mssgle:Curve.Segments>
                 <mssgle:SegmentCollection
                   Capacity="5">
                   <mssgle:LineSegment
+<<<<<<< HEAD
                     End="0,24.4999994214379" />
+=======
+                    End="0,23.699999493758" />
+>>>>>>> main
                 </mssgle:SegmentCollection>
               </mssgle:Curve.Segments>
             </mssgle:Curve>
@@ -8608,6 +9135,7 @@ where [refTable].[FirstName] = ? and [refTable].[LastName] = ?</property>
         <ContainerLayout
           HeaderHeight="43"
           IsExpanded="True"
+<<<<<<< HEAD
           PanelSize="248,264.8"
           Size="248,308"
           Id="Package\Foreach Loop Container"
@@ -8663,11 +9191,25 @@ where [refTable].[FirstName] = ? and [refTable].[LastName] = ?</property>
               EndConnector="0,26.1730315823056"
               Start="0,0"
               End="0,18.6730315823056">
+=======
+          PanelSize="253.6,176.8"
+          Size="253.6,220"
+          Id="Package\Database &amp; Table Creation"
+          TopLeft="28.9285698479842,145.409523093209" />
+        <EdgeLayout
+          Id="Package.PrecedenceConstraints[Constraint]"
+          TopLeft="282.528569847984,251.904761203083">
+          <EdgeLayout.Curve>
+            <mssgle:Curve
+              StartConnector="{assembly:Null}"
+              EndConnector="107.147648740547,0"
+              Start="0,0"
+              End="99.6476487405467,0">
               <mssgle:Curve.Segments>
                 <mssgle:SegmentCollection
                   Capacity="5">
                   <mssgle:LineSegment
-                    End="0,18.6730315823056" />
+                    End="99.6476487405467,0" />
                 </mssgle:SegmentCollection>
               </mssgle:Curve.Segments>
             </mssgle:Curve>
@@ -8676,6 +9218,58 @@ where [refTable].[FirstName] = ? and [refTable].[LastName] = ?</property>
             <EdgeLabelCollection />
           </EdgeLayout.Labels>
         </EdgeLayout>
+        <NodeLayout
+          Size="172.8,41.6"
+          Id="Package\Production Table Loading\DBOEmployee Load"
+          TopLeft="10.0767193266588,14.6809526564583" />
+        <NodeLayout
+          Size="175.2,41.6"
+          Id="Package\Production Table Loading\DBOTimesheet Load"
+          TopLeft="22.0476181434968,88.0925922296524" />
+        <NodeLayout
+          Size="198.4,41.6"
+          Id="Package\Production Table Loading\DBOEmployeeLeave load"
+          TopLeft="6.69047612543159,169.102116226863" />
+        <EdgeLayout
+          Id="Package\Production Table Loading.PrecedenceConstraints[Constraint 1]"
+          TopLeft="96.4767193266588,56.2809526564583">
+          <EdgeLayout.Curve>
+            <mssgle:Curve
+              StartConnector="{assembly:Null}"
+              EndConnector="13.170898816838,31.8116395731941"
+              Start="0,0"
+              End="13.170898816838,24.3116395731941">
+>>>>>>> main
+              <mssgle:Curve.Segments>
+                <mssgle:SegmentCollection
+                  Capacity="5">
+                  <mssgle:LineSegment
+<<<<<<< HEAD
+                    End="0,18.6730315823056" />
+=======
+                    End="0,11.9058197865971" />
+                  <mssgle:CubicBezierSegment
+                    Point1="0,11.9058197865971"
+                    Point2="0,15.9058197865971"
+                    Point3="4,15.9058197865971" />
+                  <mssgle:LineSegment
+                    End="9.17089881683802,15.9058197865971" />
+                  <mssgle:CubicBezierSegment
+                    Point1="9.17089881683802,15.9058197865971"
+                    Point2="13.170898816838,15.9058197865971"
+                    Point3="13.170898816838,19.9058197865971" />
+                  <mssgle:LineSegment
+                    End="13.170898816838,24.3116395731941" />
+>>>>>>> main
+                </mssgle:SegmentCollection>
+              </mssgle:Curve.Segments>
+            </mssgle:Curve>
+          </EdgeLayout.Curve>
+          <EdgeLayout.Labels>
+            <EdgeLabelCollection />
+          </EdgeLayout.Labels>
+        </EdgeLayout>
+<<<<<<< HEAD
         <NodeLayout
           Size="143.2,41.6"
           Id="Package\Production Table Loading\AuditStart Timesheet"
@@ -8689,10 +9283,22 @@ where [refTable].[FirstName] = ? and [refTable].[LastName] = ?</property>
               EndConnector="0,29.2158559485696"
               Start="0,0"
               End="0,21.7158559485696">
+=======
+        <EdgeLayout
+          Id="Package\Production Table Loading.PrecedenceConstraints[Constraint 2]"
+          TopLeft="107.769047134464,129.692592229652">
+          <EdgeLayout.Curve>
+            <mssgle:Curve
+              StartConnector="{assembly:Null}"
+              EndConnector="0,39.409523997211"
+              Start="0,0"
+              End="0,31.909523997211">
+>>>>>>> main
               <mssgle:Curve.Segments>
                 <mssgle:SegmentCollection
                   Capacity="5">
                   <mssgle:LineSegment
+<<<<<<< HEAD
                     End="0,21.7158559485696" />
                 </mssgle:SegmentCollection>
               </mssgle:Curve.Segments>
@@ -8816,6 +9422,9 @@ where [refTable].[FirstName] = ? and [refTable].[LastName] = ?</property>
                   Capacity="5">
                   <mssgle:LineSegment
                     End="0,17.8333335744007" />
+=======
+                    End="0,31.909523997211" />
+>>>>>>> main
                 </mssgle:SegmentCollection>
               </mssgle:Curve.Segments>
             </mssgle:Curve>
@@ -8827,6 +9436,7 @@ where [refTable].[FirstName] = ? and [refTable].[LastName] = ?</property>
         <ContainerLayout
           HeaderHeight="43"
           IsExpanded="True"
+<<<<<<< HEAD
           PanelSize="329.6,607.2"
           Size="329.6,650.4"
           Id="Package\Production Table Loading"
@@ -8862,11 +9472,30 @@ where [refTable].[FirstName] = ? and [refTable].[LastName] = ?</property>
               EndConnector="65.3843252707779,0"
               Start="0,0"
               End="57.8843252707779,0">
+=======
+          PanelSize="210.4,240"
+          Size="220.8,283.2"
+          Id="Package\Production Table Loading"
+          TopLeft="751.19043514724,108.376720641819" />
+        <EdgeLayout
+          Id="Package.PrecedenceConstraints[Constraint 1]"
+          TopLeft="637.676218588531,249.188359977388">
+          <EdgeLayout.Curve>
+            <mssgle:Curve
+              StartConnector="{assembly:Null}"
+              EndConnector="113.514216558709,0"
+              Start="0,0"
+              End="106.014216558709,0">
+>>>>>>> main
               <mssgle:Curve.Segments>
                 <mssgle:SegmentCollection
                   Capacity="5">
                   <mssgle:LineSegment
+<<<<<<< HEAD
                     End="57.8843252707779,0" />
+=======
+                    End="106.014216558709,0" />
+>>>>>>> main
                 </mssgle:SegmentCollection>
               </mssgle:Curve.Segments>
             </mssgle:Curve>
@@ -8878,6 +9507,7 @@ where [refTable].[FirstName] = ? and [refTable].[LastName] = ?</property>
       </GraphLayout>
     </LayoutInfo>
   </Package>
+<<<<<<< HEAD
   <DtsEventHandler
     design-time-name="Package.EventHandlers[OnError]">
     <LayoutInfo>
@@ -8900,10 +9530,51 @@ where [refTable].[FirstName] = ? and [refTable].[LastName] = ?</property>
               EndConnector="-15.5999997019769,49.3999986439944"
               Start="0,0"
               End="-15.5999997019769,41.8999986439944">
+=======
+  <TaskHost
+    design-time-name="Package\Production Table Loading\DBOEmployee Load">
+    <LayoutInfo>
+      <GraphLayout
+        Capacity="16" xmlns="clr-namespace:Microsoft.SqlServer.IntegrationServices.Designer.Model.Serialization;assembly=Microsoft.SqlServer.IntegrationServices.Graph" xmlns:mssgle="clr-namespace:Microsoft.SqlServer.Graph.LayoutEngine;assembly=Microsoft.SqlServer.Graph" xmlns:assembly="http://schemas.microsoft.com/winfx/2006/xaml" xmlns:mssgm="clr-namespace:Microsoft.SqlServer.Graph.Model;assembly=Microsoft.SqlServer.Graph">
+        <NodeLayout
+          Size="161.6,41.6"
+          Id="Package\Production Table Loading\DBOEmployee Load\Employee Lookup"
+          TopLeft="368.666662497653,160.999998220801" />
+        <NodeLayout
+          Size="152,41.6"
+          Id="Package\Production Table Loading\DBOEmployee Load\OLE DB Source"
+          TopLeft="371.999994456768,6.99999989569188" />
+        <NodeLayout
+          Size="170.4,41.6"
+          Id="Package\Production Table Loading\DBOEmployee Load\Flat File Destination"
+          TopLeft="121.666660019093,148.466665684316" />
+        <NodeLayout
+          Size="171.2,41.6"
+          Id="Package\Production Table Loading\DBOEmployee Load\OLE DB Destination"
+          TopLeft="373.166661337846,314.399996257623" />
+        <NodeLayout
+          Size="97.6,41.6"
+          Id="Package\Production Table Loading\DBOEmployee Load\Sort"
+          TopLeft="393.333311842548,79.1333328331179" />
+        <NodeLayout
+          Size="153.6,41.6"
+          Id="Package\Production Table Loading\DBOEmployee Load\Conditional Split"
+          TopLeft="378.999994948507,241.333330391513" />
+        <EdgeLayout
+          Id="Package\Production Table Loading\DBOEmployee Load.Paths[Sort Output]"
+          TopLeft="445.799987170101,120.733332833118">
+          <EdgeLayout.Curve>
+            <mssgle:Curve
+              StartConnector="{assembly:Null}"
+              EndConnector="0,40.2666653876834"
+              Start="0,0"
+              End="0,32.7666653876834">
+>>>>>>> main
               <mssgle:Curve.Segments>
                 <mssgle:SegmentCollection
                   Capacity="5">
                   <mssgle:LineSegment
+<<<<<<< HEAD
                     End="0,20.6999993219972" />
                   <mssgle:CubicBezierSegment
                     Point1="0,20.6999993219972"
@@ -8917,6 +9588,402 @@ where [refTable].[FirstName] = ? and [refTable].[LastName] = ?</property>
                     Point3="-15.5999997019769,28.6999993219972" />
                   <mssgle:LineSegment
                     End="-15.5999997019769,41.8999986439944" />
+=======
+                    End="0,32.7666653876834" />
+                </mssgle:SegmentCollection>
+              </mssgle:Curve.Segments>
+            </mssgle:Curve>
+          </EdgeLayout.Curve>
+          <EdgeLayout.Labels>
+            <EdgeLabelCollection />
+          </EdgeLayout.Labels>
+        </EdgeLayout>
+        <EdgeLayout
+          Id="Package\Production Table Loading\DBOEmployee Load.Paths[OLE DB Source Output]"
+          TopLeft="445.066653149658,48.5999998956919">
+          <EdgeLayout.Curve>
+            <mssgle:Curve
+              StartConnector="{assembly:Null}"
+              EndConnector="0,30.5333329374261"
+              Start="0,0"
+              End="0,23.0333329374261">
+              <mssgle:Curve.Segments>
+                <mssgle:SegmentCollection
+                  Capacity="5">
+                  <mssgle:LineSegment
+                    End="0,23.0333329374261" />
+                </mssgle:SegmentCollection>
+              </mssgle:Curve.Segments>
+            </mssgle:Curve>
+          </EdgeLayout.Curve>
+          <EdgeLayout.Labels>
+            <EdgeLabelCollection />
+          </EdgeLayout.Labels>
+        </EdgeLayout>
+        <EdgeLayout
+          Id="Package\Production Table Loading\DBOEmployee Load.Paths[Lookup No Match Output]"
+          TopLeft="368.666662497653,181.799998220801">
+          <EdgeLayout.Curve>
+            <mssgle:Curve
+              StartConnector="{assembly:Null}"
+              EndConnector="-76.6000024785596,-12.5333325364855"
+              Start="0,0"
+              End="-69.1000024785596,-12.5333325364855">
+              <mssgle:Curve.Segments>
+                <mssgle:SegmentCollection
+                  Capacity="5">
+                  <mssgle:LineSegment
+                    End="-34.3000012392798,0" />
+                  <mssgle:CubicBezierSegment
+                    Point1="-34.3000012392798,0"
+                    Point2="-38.3000012392798,0"
+                    Point3="-38.3000012392798,-4" />
+                  <mssgle:LineSegment
+                    End="-38.3000012392798,-8.53333253648549" />
+                  <mssgle:CubicBezierSegment
+                    Point1="-38.3000012392798,-8.53333253648549"
+                    Point2="-38.3000012392798,-12.5333325364855"
+                    Point3="-42.3000012392798,-12.5333325364855" />
+                  <mssgle:LineSegment
+                    End="-69.1000024785596,-12.5333325364855" />
+                </mssgle:SegmentCollection>
+              </mssgle:Curve.Segments>
+            </mssgle:Curve>
+          </EdgeLayout.Curve>
+          <EdgeLayout.Labels>
+            <mssgm:EdgeLabel
+              BoundingBox="-94.1063879580298,1,111.6127734375,11.609375"
+              RelativePosition="Any" />
+          </EdgeLayout.Labels>
+        </EdgeLayout>
+        <EdgeLayout
+          Id="Package\Production Table Loading\DBOEmployee Load.Paths[Lookup Match Output]"
+          TopLeft="452.63332872308,202.599998220801">
+          <EdgeLayout.Curve>
+            <mssgle:Curve
+              StartConnector="{assembly:Null}"
+              EndConnector="0,38.7333321707112"
+              Start="0,0"
+              End="0,31.2333321707112">
+              <mssgle:Curve.Segments>
+                <mssgle:SegmentCollection
+                  Capacity="5">
+                  <mssgle:LineSegment
+                    End="0,31.2333321707112" />
+                </mssgle:SegmentCollection>
+              </mssgle:Curve.Segments>
+            </mssgle:Curve>
+          </EdgeLayout.Curve>
+          <EdgeLayout.Labels>
+            <mssgm:EdgeLabel
+              BoundingBox="-48.19138671875,9.8119785853556,96.3827734375,11.609375"
+              RelativePosition="Any" />
+          </EdgeLayout.Labels>
+        </EdgeLayout>
+        <EdgeLayout
+          Id="Package\Production Table Loading\DBOEmployee Load.Paths[Conditional Split Default Output]"
+          TopLeft="457.283328143177,282.933330391513">
+          <EdgeLayout.Curve>
+            <mssgle:Curve
+              StartConnector="{assembly:Null}"
+              EndConnector="0,31.4666658661101"
+              Start="0,0"
+              End="0,23.9666658661101">
+              <mssgle:Curve.Segments>
+                <mssgle:SegmentCollection
+                  Capacity="5">
+                  <mssgle:LineSegment
+                    End="0,23.9666658661101" />
+                </mssgle:SegmentCollection>
+              </mssgle:Curve.Segments>
+            </mssgle:Curve>
+          </EdgeLayout.Curve>
+          <EdgeLayout.Labels>
+            <mssgm:EdgeLabel
+              BoundingBox="-70.61390625,6.15423137055505,141.2278125,11.658203125"
+              RelativePosition="Any" />
+          </EdgeLayout.Labels>
+        </EdgeLayout>
+      </GraphLayout>
+    </LayoutInfo>
+  </TaskHost>
+  <PipelineComponentMetadata
+    design-time-name="Package\Production Table Loading\DBOEmployee Load\Employee Lookup">
+    <Properties>
+      <Property>
+        <Name>OverwriteParamsSQLProp</Name>
+        <Value
+          type="q2:string">false</Value>
+      </Property>
+      <Property>
+        <Name>UsedTableName</Name>
+        <Value
+          type="q3:string"></Value>
+      </Property>
+      <Property>
+        <Name>TableInfoObjectType</Name>
+        <Value
+          type="q4:string">0</Value>
+      </Property>
+      <Property>
+        <Name>DataSourceViewID</Name>
+      </Property>
+    </Properties>
+  </PipelineComponentMetadata>
+  <PipelineComponentMetadata
+    design-time-name="Package\Production Table Loading\DBOEmployee Load\OLE DB Source">
+    <Properties>
+      <Property>
+        <Name>DataSourceViewID</Name>
+      </Property>
+      <Property>
+        <Name>TableInfoObjectType</Name>
+        <Value
+          type="q2:string">Table</Value>
+      </Property>
+    </Properties>
+  </PipelineComponentMetadata>
+  <PipelineComponentMetadata
+    design-time-name="Package\Production Table Loading\DBOEmployee Load\OLE DB Destination">
+    <Properties>
+      <Property>
+        <Name>DataSourceViewID</Name>
+      </Property>
+      <Property>
+        <Name>TableInfoObjectType</Name>
+        <Value
+          type="q2:string">Table</Value>
+      </Property>
+    </Properties>
+  </PipelineComponentMetadata>
+  <TaskHost
+    design-time-name="Package\Production Table Loading\DBOTimesheet Load">
+    <LayoutInfo>
+      <GraphLayout
+        Capacity="16" xmlns="clr-namespace:Microsoft.SqlServer.IntegrationServices.Designer.Model.Serialization;assembly=Microsoft.SqlServer.IntegrationServices.Graph" xmlns:mssgle="clr-namespace:Microsoft.SqlServer.Graph.LayoutEngine;assembly=Microsoft.SqlServer.Graph" xmlns:assembly="http://schemas.microsoft.com/winfx/2006/xaml" xmlns:mssgm="clr-namespace:Microsoft.SqlServer.Graph.Model;assembly=Microsoft.SqlServer.Graph">
+        <NodeLayout
+          Size="171.2,41.6"
+          Id="Package\Production Table Loading\DBOTimesheet Load\OLE DB Destination"
+          TopLeft="212.892252756707,489.441071829665" />
+        <NodeLayout
+          Size="150.4,41.6"
+          Id="Package\Production Table Loading\DBOTimesheet Load\Client Lookup 1"
+          TopLeft="197.272724333135,174.545451944525" />
+        <NodeLayout
+          Size="161.6,41.6"
+          Id="Package\Production Table Loading\DBOTimesheet Load\Employee Lookup"
+          TopLeft="206.363633288579,95.4545440321619" />
+        <NodeLayout
+          Size="152.8,41.6"
+          Id="Package\Production Table Loading\DBOTimesheet Load\Derived Column"
+          TopLeft="207.272724184123,354.597399471952" />
+        <NodeLayout
+          Size="156.8,41.6"
+          Id="Package\Production Table Loading\DBOTimesheet Load\Activity Lookup 2"
+          TopLeft="207.272724184123,247.272723588077" />
+        <NodeLayout
+          Size="152,41.6"
+          Id="Package\Production Table Loading\DBOTimesheet Load\OLE DB Source"
+          TopLeft="437.36362984641,14.8181815973737" />
+        <EdgeLayout
+          Id="Package\Production Table Loading\DBOTimesheet Load.Paths[Lookup Match Output2]"
+          TopLeft="284.672724184123,288.872723588077">
+          <EdgeLayout.Curve>
+            <mssgle:Curve
+              StartConnector="{assembly:Null}"
+              EndConnector="0,65.7246758838751"
+              Start="0,0"
+              End="0,58.2246758838751">
+              <mssgle:Curve.Segments>
+                <mssgle:SegmentCollection
+                  Capacity="5">
+                  <mssgle:LineSegment
+                    End="0,58.2246758838751" />
+                </mssgle:SegmentCollection>
+              </mssgle:Curve.Segments>
+            </mssgle:Curve>
+          </EdgeLayout.Curve>
+          <EdgeLayout.Labels>
+            <mssgm:EdgeLabel
+              BoundingBox="-48.19138671875,23.3076504419376,96.3827734375,11.609375"
+              RelativePosition="Any" />
+          </EdgeLayout.Labels>
+        </EdgeLayout>
+        <EdgeLayout
+          Id="Package\Production Table Loading\DBOTimesheet Load.Paths[Lookup Match Output1]"
+          TopLeft="272.472724333135,216.145451944525">
+          <EdgeLayout.Curve>
+            <mssgle:Curve
+              StartConnector="{assembly:Null}"
+              EndConnector="13.1999998509881,31.1272716435519"
+              Start="0,0"
+              End="13.1999998509881,23.6272716435519">
+              <mssgle:Curve.Segments>
+                <mssgle:SegmentCollection
+                  Capacity="5">
+                  <mssgle:LineSegment
+                    End="0,11.563635821776" />
+                  <mssgle:CubicBezierSegment
+                    Point1="0,11.563635821776"
+                    Point2="0,15.563635821776"
+                    Point3="4,15.563635821776" />
+                  <mssgle:LineSegment
+                    End="9.19999985098815,15.563635821776" />
+                  <mssgle:CubicBezierSegment
+                    Point1="9.19999985098815,15.563635821776"
+                    Point2="13.1999998509881,15.563635821776"
+                    Point3="13.1999998509881,19.563635821776" />
+                  <mssgle:LineSegment
+                    End="13.1999998509881,23.6272716435519" />
+                </mssgle:SegmentCollection>
+              </mssgle:Curve.Segments>
+            </mssgle:Curve>
+          </EdgeLayout.Curve>
+          <EdgeLayout.Labels>
+            <mssgm:EdgeLabel
+              BoundingBox="-41.5913867932559,20.563635821776,96.3827734375,11.609375"
+              RelativePosition="Any" />
+          </EdgeLayout.Labels>
+        </EdgeLayout>
+        <EdgeLayout
+          Id="Package\Production Table Loading\DBOTimesheet Load.Paths[Lookup Match Output]"
+          TopLeft="287.163633288579,137.054544032162">
+          <EdgeLayout.Curve>
+            <mssgle:Curve
+              StartConnector="{assembly:Null}"
+              EndConnector="-14.6909089554438,37.4909079123627"
+              Start="0,0"
+              End="-14.6909089554438,29.9909079123627">
+              <mssgle:Curve.Segments>
+                <mssgle:SegmentCollection
+                  Capacity="5">
+                  <mssgle:LineSegment
+                    End="0,14.7454539561814" />
+                  <mssgle:CubicBezierSegment
+                    Point1="0,14.7454539561814"
+                    Point2="0,18.7454539561814"
+                    Point3="-4,18.7454539561814" />
+                  <mssgle:LineSegment
+                    End="-10.6909089554438,18.7454539561814" />
+                  <mssgle:CubicBezierSegment
+                    Point1="-10.6909089554438,18.7454539561814"
+                    Point2="-14.6909089554438,18.7454539561814"
+                    Point3="-14.6909089554438,22.7454539561814" />
+                  <mssgle:LineSegment
+                    End="-14.6909089554438,29.9909079123627" />
+                </mssgle:SegmentCollection>
+              </mssgle:Curve.Segments>
+            </mssgle:Curve>
+          </EdgeLayout.Curve>
+          <EdgeLayout.Labels>
+            <mssgm:EdgeLabel
+              BoundingBox="-55.5368411964719,23.7454539561814,96.3827734375,11.609375"
+              RelativePosition="Any" />
+          </EdgeLayout.Labels>
+        </EdgeLayout>
+        <NodeLayout
+          Size="153.6,41.6"
+          Id="Package\Production Table Loading\DBOTimesheet Load\Conditional Split"
+          TopLeft="443.518494285736,94.3703697141306" />
+        <EdgeLayout
+          Id="Package\Production Table Loading\DBOTimesheet Load.Paths[Conditional Split Default Output]"
+          TopLeft="443.518494285736,115.712456873146">
+          <EdgeLayout.Curve>
+            <mssgle:Curve
+              StartConnector="{assembly:Null}"
+              EndConnector="-75.554860997157,0"
+              Start="0,0"
+              End="-68.054860997157,0">
+              <mssgle:Curve.Segments>
+                <mssgle:SegmentCollection
+                  Capacity="5">
+                  <mssgle:LineSegment
+                    End="-68.054860997157,0" />
+                </mssgle:SegmentCollection>
+              </mssgle:Curve.Segments>
+            </mssgle:Curve>
+          </EdgeLayout.Curve>
+          <EdgeLayout.Labels>
+            <mssgm:EdgeLabel
+              BoundingBox="-104.641336748579,5,141.2278125,11.658203125"
+              RelativePosition="Any" />
+          </EdgeLayout.Labels>
+        </EdgeLayout>
+        <EdgeLayout
+          Id="Package\Production Table Loading\DBOTimesheet Load.Paths[OLE DB Source Output]"
+          TopLeft="516.841062066073,56.4181815973737">
+          <EdgeLayout.Curve>
+            <mssgle:Curve
+              StartConnector="{assembly:Null}"
+              EndConnector="0,37.9521881167569"
+              Start="0,0"
+              End="0,30.4521881167569">
+              <mssgle:Curve.Segments>
+                <mssgle:SegmentCollection
+                  Capacity="5">
+                  <mssgle:LineSegment
+                    End="0,30.4521881167569" />
+                </mssgle:SegmentCollection>
+              </mssgle:Curve.Segments>
+            </mssgle:Curve>
+          </EdgeLayout.Curve>
+          <EdgeLayout.Labels>
+            <EdgeLabelCollection />
+          </EdgeLayout.Labels>
+        </EdgeLayout>
+        <NodeLayout
+          Size="156,41.6"
+          Id="Package\Production Table Loading\DBOTimesheet Load\Data Conversion"
+          TopLeft="222.222210080536,421.999998332615" />
+        <EdgeLayout
+          Id="Package\Production Table Loading\DBOTimesheet Load.Paths[Derived Column Output]"
+          TopLeft="283.672724184123,396.197399471952">
+          <EdgeLayout.Curve>
+            <mssgle:Curve
+              StartConnector="{assembly:Null}"
+              EndConnector="16.5494858964128,25.8025988606631"
+              Start="0,0"
+              End="16.5494858964128,18.3025988606631">
+              <mssgle:Curve.Segments>
+                <mssgle:SegmentCollection
+                  Capacity="5">
+                  <mssgle:LineSegment
+                    End="0,8.90129943033156" />
+                  <mssgle:CubicBezierSegment
+                    Point1="0,8.90129943033156"
+                    Point2="0,12.9012994303316"
+                    Point3="4,12.9012994303316" />
+                  <mssgle:LineSegment
+                    End="12.5494858964128,12.9012994303316" />
+                  <mssgle:CubicBezierSegment
+                    Point1="12.5494858964128,12.9012994303316"
+                    Point2="16.5494858964128,12.9012994303316"
+                    Point3="16.5494858964128,16.9012994303316" />
+                  <mssgle:LineSegment
+                    End="16.5494858964128,18.3025988606631" />
+                </mssgle:SegmentCollection>
+              </mssgle:Curve.Segments>
+            </mssgle:Curve>
+          </EdgeLayout.Curve>
+          <EdgeLayout.Labels>
+            <EdgeLabelCollection />
+          </EdgeLayout.Labels>
+        </EdgeLayout>
+        <EdgeLayout
+          Id="Package\Production Table Loading\DBOTimesheet Load.Paths[Data Conversion Output]"
+          TopLeft="299.357231418622,463.599998332615">
+          <EdgeLayout.Curve>
+            <mssgle:Curve
+              StartConnector="{assembly:Null}"
+              EndConnector="0,25.8410734970497"
+              Start="0,0"
+              End="0,18.3410734970497">
+              <mssgle:Curve.Segments>
+                <mssgle:SegmentCollection
+                  Capacity="5">
+                  <mssgle:LineSegment
+                    End="0,18.3410734970497" />
+>>>>>>> main
                 </mssgle:SegmentCollection>
               </mssgle:Curve.Segments>
             </mssgle:Curve>
@@ -8927,7 +9994,106 @@ where [refTable].[FirstName] = ? and [refTable].[LastName] = ?</property>
         </EdgeLayout>
       </GraphLayout>
     </LayoutInfo>
+<<<<<<< HEAD
   </DtsEventHandler>
+=======
+  </TaskHost>
+  <PipelineComponentMetadata
+    design-time-name="Package\Production Table Loading\DBOTimesheet Load\OLE DB Destination">
+    <Properties>
+      <Property>
+        <Name>DataSourceViewID</Name>
+      </Property>
+      <Property>
+        <Name>TableInfoObjectType</Name>
+        <Value
+          type="q2:string">Table</Value>
+      </Property>
+    </Properties>
+  </PipelineComponentMetadata>
+  <PipelineComponentMetadata
+    design-time-name="Package\Production Table Loading\DBOTimesheet Load\Client Lookup 1">
+    <Properties>
+      <Property>
+        <Name>OverwriteParamsSQLProp</Name>
+        <Value
+          type="q2:string">false</Value>
+      </Property>
+      <Property>
+        <Name>UsedTableName</Name>
+        <Value
+          type="q3:string">[dbo].[Client]</Value>
+      </Property>
+      <Property>
+        <Name>TableInfoObjectType</Name>
+        <Value
+          type="q4:string">0</Value>
+      </Property>
+      <Property>
+        <Name>DataSourceViewID</Name>
+      </Property>
+    </Properties>
+  </PipelineComponentMetadata>
+  <PipelineComponentMetadata
+    design-time-name="Package\Production Table Loading\DBOTimesheet Load\Employee Lookup">
+    <Properties>
+      <Property>
+        <Name>OverwriteParamsSQLProp</Name>
+        <Value
+          type="q2:string">false</Value>
+      </Property>
+      <Property>
+        <Name>UsedTableName</Name>
+        <Value
+          type="q3:string">[dbo].[Employee]</Value>
+      </Property>
+      <Property>
+        <Name>TableInfoObjectType</Name>
+        <Value
+          type="q4:string">0</Value>
+      </Property>
+      <Property>
+        <Name>DataSourceViewID</Name>
+      </Property>
+    </Properties>
+  </PipelineComponentMetadata>
+  <PipelineComponentMetadata
+    design-time-name="Package\Production Table Loading\DBOTimesheet Load\Activity Lookup 2">
+    <Properties>
+      <Property>
+        <Name>OverwriteParamsSQLProp</Name>
+        <Value
+          type="q2:string">false</Value>
+      </Property>
+      <Property>
+        <Name>UsedTableName</Name>
+        <Value
+          type="q3:string">[dbo].[Activity]</Value>
+      </Property>
+      <Property>
+        <Name>TableInfoObjectType</Name>
+        <Value
+          type="q4:string">0</Value>
+      </Property>
+      <Property>
+        <Name>DataSourceViewID</Name>
+      </Property>
+    </Properties>
+  </PipelineComponentMetadata>
+  <PipelineComponentMetadata
+    design-time-name="Package\Production Table Loading\DBOTimesheet Load\OLE DB Source">
+    <Properties>
+      <Property>
+        <Name>DataSourceViewID</Name>
+      </Property>
+      <Property>
+        <Name>TableInfoObjectType</Name>
+        <Value
+          type="q2:string">Table</Value>
+      </Property>
+    </Properties>
+  </PipelineComponentMetadata>
+>>>>>>> main
   <TaskHost
     design-time-name="Package\Foreach Loop Container\Staging load">
     <LayoutInfo>
@@ -8964,7 +10130,11 @@ where [refTable].[FirstName] = ? and [refTable].[LastName] = ?</property>
         <NodeLayout
           Size="171.2,41.6"
           Id="Package\Foreach Loop Container\Staging load\OLE DB Destination"
+<<<<<<< HEAD
           TopLeft="365.074054387801,418.051848221568" />
+=======
+          TopLeft="360.074054660989,383.385181795969" />
+>>>>>>> main
         <NodeLayout
           Size="152.8,41.6"
           Id="Package\Foreach Loop Container\Staging load\Derived Column"
@@ -9191,6 +10361,7 @@ where [refTable].[FirstName] = ? and [refTable].[LastName] = ?</property>
             <EdgeLabelCollection />
           </EdgeLayout.Labels>
         </EdgeLayout>
+<<<<<<< HEAD
         <NodeLayout
           Size="129.6,41.6"
           Id="Package\Foreach Loop Container\Staging load\Row Count"
@@ -9204,17 +10375,45 @@ where [refTable].[FirstName] = ? and [refTable].[LastName] = ?</property>
               EndConnector="0,24.6444466810092"
               Start="0,0"
               End="0,17.1444466810092">
+=======
+        <EdgeLayout
+          Id="Package\Foreach Loop Container\Staging load.Paths[Conditional Split Default Output]"
+          TopLeft="429.022216973702,300.488885031144">
+          <EdgeLayout.Curve>
+            <mssgle:Curve
+              StartConnector="{assembly:Null}"
+              EndConnector="16.6518376872868,82.8962967648254"
+              Start="0,0"
+              End="16.6518376872868,75.3962967648254">
+>>>>>>> main
               <mssgle:Curve.Segments>
                 <mssgle:SegmentCollection
                   Capacity="5">
                   <mssgle:LineSegment
+<<<<<<< HEAD
                     End="0,17.1444466810092" />
+=======
+                    End="0,37.4481483824127" />
+                  <mssgle:CubicBezierSegment
+                    Point1="0,37.4481483824127"
+                    Point2="0,41.4481483824127"
+                    Point3="4,41.4481483824127" />
+                  <mssgle:LineSegment
+                    End="12.6518376872868,41.4481483824127" />
+                  <mssgle:CubicBezierSegment
+                    Point1="12.6518376872868,41.4481483824127"
+                    Point2="16.6518376872868,41.4481483824127"
+                    Point3="16.6518376872868,45.4481483824127" />
+                  <mssgle:LineSegment
+                    End="16.6518376872868,75.3962967648254" />
+>>>>>>> main
                 </mssgle:SegmentCollection>
               </mssgle:Curve.Segments>
             </mssgle:Curve>
           </EdgeLayout.Curve>
           <EdgeLayout.Labels>
             <mssgm:EdgeLabel
+<<<<<<< HEAD
               BoundingBox="-70.61390625,2.74312177800462,141.2278125,11.658203125"
               RelativePosition="Any" />
           </EdgeLayout.Labels>
@@ -9253,6 +10452,12 @@ where [refTable].[FirstName] = ? and [refTable].[LastName] = ?</property>
             <EdgeLabelCollection />
           </EdgeLayout.Labels>
         </EdgeLayout>
+=======
+              BoundingBox="-62.2879874063566,46.4481483824127,141.2278125,11.658203125"
+              RelativePosition="Any" />
+          </EdgeLayout.Labels>
+        </EdgeLayout>
+>>>>>>> main
       </GraphLayout>
     </LayoutInfo>
   </TaskHost>
@@ -9277,6 +10482,7 @@ where [refTable].[FirstName] = ? and [refTable].[LastName] = ?</property>
       </Property>
     </Properties>
   </PipelineComponentMetadata>
+<<<<<<< HEAD
   <TaskHost
     design-time-name="Package\Production Table Loading\DBOEmployee Leave">
     <LayoutInfo>
@@ -10179,11 +11385,16 @@ where [refTable].[FirstName] = ? and [refTable].[LastName] = ?</property>
   </PipelineComponentMetadata>
   <DtsEventHandler
     design-time-name="Package\Production Table Loading.EventHandlers[OnError]">
+=======
+  <DtsEventHandler
+    design-time-name="Package.EventHandlers[OnError]">
+>>>>>>> main
     <LayoutInfo>
       <GraphLayout
         Capacity="4" xmlns="clr-namespace:Microsoft.SqlServer.IntegrationServices.Designer.Model.Serialization;assembly=Microsoft.SqlServer.IntegrationServices.Graph" xmlns:mssgle="clr-namespace:Microsoft.SqlServer.Graph.LayoutEngine;assembly=Microsoft.SqlServer.Graph" xmlns:assembly="http://schemas.microsoft.com/winfx/2006/xaml">
         <NodeLayout
           Size="155.2,41.6"
+<<<<<<< HEAD
           Id="Package\Production Table Loading.EventHandlers[OnError]\Expression Task"
           TopLeft="430.9999935776,114.999998286366" />
         <NodeLayout
@@ -10199,11 +11410,44 @@ where [refTable].[FirstName] = ? and [refTable].[LastName] = ?</property>
               EndConnector="0,47.3999986737967"
               Start="0,0"
               End="0,39.8999986737967">
+=======
+          Id="Package.EventHandlers[OnError]\Expression Task"
+          TopLeft="415.999993801117,61.999999076128" />
+        <NodeLayout
+          Size="164,41.6"
+          Id="Package.EventHandlers[OnError]\Expression Task 1"
+          TopLeft="395.99999409914,152.999997720122" />
+        <EdgeLayout
+          Id="Package.EventHandlers[OnError].PrecedenceConstraints[Constraint]"
+          TopLeft="493.599993801117,103.599999076128">
+          <EdgeLayout.Curve>
+            <mssgle:Curve
+              StartConnector="{assembly:Null}"
+              EndConnector="-15.5999997019769,49.3999986439944"
+              Start="0,0"
+              End="-15.5999997019769,41.8999986439944">
+>>>>>>> main
               <mssgle:Curve.Segments>
                 <mssgle:SegmentCollection
                   Capacity="5">
                   <mssgle:LineSegment
+<<<<<<< HEAD
                     End="0,39.8999986737967" />
+=======
+                    End="0,20.6999993219972" />
+                  <mssgle:CubicBezierSegment
+                    Point1="0,20.6999993219972"
+                    Point2="0,24.6999993219972"
+                    Point3="-4,24.6999993219972" />
+                  <mssgle:LineSegment
+                    End="-11.5999997019769,24.6999993219972" />
+                  <mssgle:CubicBezierSegment
+                    Point1="-11.5999997019769,24.6999993219972"
+                    Point2="-15.5999997019769,24.6999993219972"
+                    Point3="-15.5999997019769,28.6999993219972" />
+                  <mssgle:LineSegment
+                    End="-15.5999997019769,41.8999986439944" />
+>>>>>>> main
                 </mssgle:SegmentCollection>
               </mssgle:Curve.Segments>
             </mssgle:Curve>
