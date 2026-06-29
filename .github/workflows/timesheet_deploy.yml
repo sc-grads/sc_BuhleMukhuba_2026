@@ -1,4 +1,4 @@
-name: SSIS Execution Pipeline
+name: Timesheet Migration
 
 on: 
   push:
@@ -25,19 +25,30 @@ jobs:
       run: |
 
         if (-not $env:TEAMS_WEBHOOK) {
-          throw "TEAMS webhook URL is missing"
+            throw "TEAMS webhook URL is missing or not configured"
         }
 
-        $body = @{
+        $payload = @{
             text = "SSIS Pipeline STARTED on branch: main"
-        } | ConvertTo-Json
+        } | ConvertTo-Json -Depth 10
 
-        Invoke-RestMethod -Uri $env:TEAMS_WEBHOOK -Method Post -Body $body -ContentType "application/json"
+        try {
+            Invoke-RestMethod `
+                -Uri $env:TEAMS_WEBHOOK `
+                -Method Post `
+                -Body $payload `
+                -ContentType "application/json"
+        }
+        catch {
+            Write-Host "Failed to send Teams start notification: $($_.Exception.Message)"
+        }
+
 
     # CHECKOUT
 
     - name: Checkout Repo
       uses: actions/checkout@v4
+
 
     # VALIDATE PACKAGE
 
@@ -45,10 +56,14 @@ jobs:
       shell: powershell
       run: |
 
-        if (!(Test-Path "Automation Project/Timesheet_Migration/Timesheet_Migration/Migration.dtsx"))
-        {
-            throw "SSIS package not found"
+        $packagePath = "Automation Project/Timesheet_Migration/Timesheet_Migration/Migration.dtsx"
+
+        if (!(Test-Path $packagePath)) {
+            throw "SSIS package not found at: $packagePath"
         }
+
+        Write-Host "Package validated successfully"
+
 
     # EXECUTE SSIS PACKAGE
 
@@ -56,8 +71,11 @@ jobs:
       shell: powershell
       run: |
 
+        $packagePath = "Automation Project/Timesheet_Migration/Timesheet_Migration/Migration.dtsx"
+
         & "C:\Program Files\Microsoft SQL Server\160\DTS\Binn\dtexec.exe" `
-          /FILE "Automation Project/Timesheet_Migration/Timesheet_Migration/Migration.dtsx"
+          /FILE $packagePath
+
 
     # VALIDATION
 
@@ -71,6 +89,7 @@ jobs:
         -d TimesheetDB `
         -Q "SELECT COUNT(*) AS EmployeeCount FROM Employee"
 
+
     # SUCCESS NOTIFICATION
 
     - name: Notify Success
@@ -78,11 +97,21 @@ jobs:
       shell: powershell
       run: |
 
-        $body = @{
+        $payload = @{
             text = "SSIS Pipeline SUCCESSFUL. Data loaded into TimesheetDB."
-        } | ConvertTo-Json
+        } | ConvertTo-Json -Depth 10
 
-        Invoke-RestMethod -Uri $env:TEAMS_WEBHOOK -Method Post -Body $body -ContentType "application/json"
+        try {
+            Invoke-RestMethod `
+                -Uri $env:TEAMS_WEBHOOK `
+                -Method Post `
+                -Body $payload `
+                -ContentType "application/json"
+        }
+        catch {
+            Write-Host "Failed to send success notification: $($_.Exception.Message)"
+        }
+
 
     # ROLLBACK (FAILURE)
 
@@ -103,6 +132,7 @@ jobs:
             DROP DATABASE TimesheetDB
         END"
 
+
     # FAILURE NOTIFICATION
 
     - name: Notify Failure
@@ -110,8 +140,17 @@ jobs:
       shell: powershell
       run: |
 
-        $body = @{
+        $payload = @{
             text = "SSIS Pipeline FAILED. Rollback executed for TimesheetDB."
-        } | ConvertTo-Json
+        } | ConvertTo-Json -Depth 10
 
-        Invoke-RestMethod -Uri $env:TEAMS_WEBHOOK -Method Post -Body $body -ContentType "application/json"
+        try {
+            Invoke-RestMethod `
+                -Uri $env:TEAMS_WEBHOOK `
+                -Method Post `
+                -Body $payload `
+                -ContentType "application/json"
+        }
+        catch {
+            Write-Host "Failed to send failure notification: $($_.Exception.Message)"
+        }
