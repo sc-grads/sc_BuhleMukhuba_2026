@@ -73,7 +73,7 @@ jobs:
 
         $packagePath = "Automation Project/Timesheet_Migration/Timesheet_Migration/Migration.dtsx"
 
-        & "C:\Program Files\Microsoft SQL Server\160\DTS\Binn\dtexec.exe" `
+        & "C:\Program Files\Microsoft SQL Server\130\DTS\Binn\DTExec.exe" `
           /FILE $packagePath
 
 
@@ -87,6 +87,7 @@ jobs:
         -S "${{ secrets.SQL_SERVER }}" `
         -E `
         -d TimesheetDB `
+        -C -TrustServerCertificate
         -Q "SELECT COUNT(*) AS EmployeeCount FROM Employee"
 
 
@@ -127,6 +128,7 @@ jobs:
         -E `
         -d master `
         -Q "
+        -C -TrustServerCertificate
         IF DB_ID('TimesheetDB') IS NOT NULL
         BEGIN
             DROP DATABASE TimesheetDB
