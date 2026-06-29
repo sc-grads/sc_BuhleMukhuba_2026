@@ -56,7 +56,7 @@ jobs:
       shell: powershell
       run: |
 
-        $packagePath = "Automation Project/Timesheet_Migration/Timesheet_Migration/Migration.dtsx"
+        $packagePath = "Automation_Project/Timesheet_Migration/Timesheet_Migration/Migration.dtsx"
 
         if (!(Test-Path $packagePath)) {
             throw "SSIS package not found at: $packagePath"
@@ -71,7 +71,7 @@ jobs:
       shell: powershell
       run: |
 
-        $packagePath = "Automation Project/Timesheet_Migration/Timesheet_Migration/Migration.dtsx"
+        $packagePath = "Automation_Project/Timesheet_Migration/Timesheet_Migration/Migration.dtsx"
 
         & "C:\Program Files\Microsoft SQL Server\130\DTS\Binn\DTExec.exe" `
           /FILE $packagePath
