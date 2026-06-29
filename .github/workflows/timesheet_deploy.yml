@@ -86,8 +86,9 @@ jobs:
         sqlcmd `
         -S "${{ secrets.SQL_SERVER }}" `
         -E `
+        -C `
+        -TrustServerCertificate `
         -d TimesheetDB `
-        -C -TrustServerCertificate
         -Q "SELECT COUNT(*) AS EmployeeCount FROM Employee"
 
 
@@ -126,9 +127,10 @@ jobs:
         sqlcmd `
         -S "${{ secrets.SQL_SERVER }}" `
         -E `
+        -C `
+        -TrustServerCertificate `
         -d master `
         -Q "
-        -C -TrustServerCertificate
         IF DB_ID('TimesheetDB') IS NOT NULL
         BEGIN
             DROP DATABASE TimesheetDB
