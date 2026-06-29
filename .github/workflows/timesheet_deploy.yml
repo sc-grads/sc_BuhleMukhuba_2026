@@ -14,23 +14,25 @@ jobs:
     runs-on: self-hosted
 
     env:
-         TEAMS_WEBHOOK: ${{ secrets.TEAMS_WEBHOOK_URL }}
+      TEAMS_WEBHOOK: ${{ secrets.TEAMS_WEBHOOK_URL }}
 
     steps:
 
     # START NOTIFICATION
-    
+
     - name: Notify Start
       shell: powershell
       run: |
 
+        if (-not $env:TEAMS_WEBHOOK) {
+          throw "TEAMS webhook URL is missing"
+        }
+
         $body = @{
-            text = "SSIS pipeline started on branch: main"
+            text = "SSIS Pipeline STARTED on branch: main"
         } | ConvertTo-Json
 
-        Invoke-RestMethod -Uri  env:
-         TEAMS_WEBHOOK: ${{ secrets.TEAMS_WEBHOOK_URL }}
-         -Method Post -Body $body -ContentType "application/json"
+        Invoke-RestMethod -Uri $env:TEAMS_WEBHOOK -Method Post -Body $body -ContentType "application/json"
 
     # CHECKOUT
 
@@ -49,7 +51,7 @@ jobs:
         }
 
     # EXECUTE SSIS PACKAGE
-    
+
     - name: Execute SSIS Package
       shell: powershell
       run: |
@@ -80,9 +82,7 @@ jobs:
             text = "SSIS Pipeline SUCCESSFUL. Data loaded into TimesheetDB."
         } | ConvertTo-Json
 
-        Invoke-RestMethod -Uri  env:
-         TEAMS_WEBHOOK: ${{ secrets.TEAMS_WEBHOOK_URL }} 
-         -Method Post -Body $body -ContentType "application/json"
+        Invoke-RestMethod -Uri $env:TEAMS_WEBHOOK -Method Post -Body $body -ContentType "application/json"
 
     # ROLLBACK (FAILURE)
 
@@ -114,6 +114,4 @@ jobs:
             text = "SSIS Pipeline FAILED. Rollback executed for TimesheetDB."
         } | ConvertTo-Json
 
-        Invoke-RestMethod -Uri  env:
-         TEAMS_WEBHOOK: ${{ secrets.TEAMS_WEBHOOK_URL }}
-         -Method Post -Body $body -ContentType "application/json"
+        Invoke-RestMethod -Uri $env:TEAMS_WEBHOOK -Method Post -Body $body -ContentType "application/json"
