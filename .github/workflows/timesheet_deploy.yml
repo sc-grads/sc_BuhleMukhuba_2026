@@ -14,7 +14,7 @@ jobs:
     runs-on: self-hosted
 
     env:
-      TEAMS_WEBHOOK: ${{ secrets.TEAMS_WEBHOOK }}
+         TEAMS_WEBHOOK: ${{ secrets.TEAMS_WEBHOOK }}
 
     steps:
 
