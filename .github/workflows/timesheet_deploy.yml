@@ -1,156 +1,179 @@
-name: Timesheet Migration
+name: Deploy SSIS and Run SQL Job
 
-on: 
+on:
   workflow_dispatch:
 
 jobs:
-
-  run-ssis:
+  deploy-and-run:
 
     runs-on: self-hosted
 
     env:
+      SQL_SERVER: ${{ secrets.SQL_SERVER }}
       TEAMS_WEBHOOK: ${{ secrets.TEAMS_WEBHOOK_URL }}
+      SSIS_FOLDER: Timesheet
+      SSIS_PROJECT: Timesheet_Migration
+      SQL_AGENT_JOB: Timesheet_ETL_Load
 
     steps:
-
-    # START NOTIFICATION
-
-    - name: Notify Start
-      shell: powershell
-      run: |
-
-        if (-not $env:TEAMS_WEBHOOK) {
-            throw "TEAMS webhook URL is missing or not configured"
-        }
-
-        $payload = @{
-            text = "SSIS Pipeline STARTED on branch: main"
-        } | ConvertTo-Json -Depth 10
-
-        try {
-            Invoke-RestMethod `
-                -Uri $env:TEAMS_WEBHOOK `
-                -Method Post `
-                -Body $payload `
-                -ContentType "application/json"
-        }
-        catch {
-            Write-Host "Failed to send Teams start notification: $($_.Exception.Message)"
-        }
-
-
-    # CHECKOUT
 
     - name: Checkout Repo
       uses: actions/checkout@v4
 
-
-    # VALIDATE PACKAGE
-
-    - name: Validate DTSX Exists
+    - name: Notify Start
       shell: powershell
       run: |
+        $payload = @{
+          text = "SSIS deployment started."
+        } | ConvertTo-Json
 
-        $packagePath = "Automation_Project/Timesheet_Migration/Timesheet_Migration/Migration.dtsx"
+        Invoke-RestMethod `
+          -Uri $env:TEAMS_WEBHOOK `
+          -Method Post `
+          -Body $payload `
+          -ContentType "application/json"
 
-        if (!(Test-Path $packagePath)) {
-            throw "SSIS package not found at: $packagePath"
+    - name: Build SSIS Project
+      shell: powershell
+      run: |
+        $msbuild = "C:\Program Files\Microsoft Visual Studio\2022\BuildTools\MSBuild\Current\Bin\MSBuild.exe"
+
+        if (!(Test-Path $msbuild)) {
+          throw "MSBuild not found. Install Visual Studio Build Tools with SSDT."
         }
 
-        Write-Host "Package validated successfully"
+        & $msbuild `
+          "Automation_Project\Timesheet_Migration\Timesheet_Migration.dtproj" `
+          /p:Configuration=Development `
+          /p:Platform="Any CPU"
 
-
-    # EXECUTE SSIS PACKAGE
-
-    - name: Execute SSIS Package
+    - name: Validate ISPAC Exists
       shell: powershell
       run: |
+        $ispac = Get-ChildItem `
+          -Path "Automation_Project" `
+          -Recurse `
+          -Filter *.ispac |
+          Select-Object -First 1
 
-        $packagePath = "Automation_Project/Timesheet_Migration/Timesheet_Migration/Migration.dtsx"
+        if (!$ispac) {
+          throw "ISPAC file was not generated."
+        }
 
-        & "C:\Program Files\Microsoft SQL Server\170\DTS\Binn\DTExec.exe" `
-          /FILE $packagePath
+        Write-Host "ISPAC found: $($ispac.FullName)"
 
-
-    # VALIDATION
-
-    - name: Validate Load
+    - name: Create SSIS Folder If Missing
       shell: powershell
       run: |
+        sqlcmd `
+          -S $env:SQL_SERVER `
+          -E `
+          -C `
+          -TrustServerCertificate `
+          -d SSISDB `
+          -Q "
+          IF NOT EXISTS (
+              SELECT 1
+              FROM catalog.folders
+              WHERE name = '$env:SSIS_FOLDER'
+          )
+          BEGIN
+              EXEC catalog.create_folder
+                  @folder_name = '$env:SSIS_FOLDER';
+          END
+          "
+
+    - name: Deploy ISPAC to SSISDB
+      shell: powershell
+      run: |
+        $ispac = Get-ChildItem `
+          -Path "Automation_Project" `
+          -Recurse `
+          -Filter *.ispac |
+          Select-Object -First 1
+
+        $sql = @"
+        DECLARE @ProjectBinary VARBINARY(MAX);
+
+        SELECT @ProjectBinary = BulkColumn
+        FROM OPENROWSET(
+            BULK '$($ispac.FullName)',
+            SINGLE_BLOB
+        ) AS ProjectFile;
+
+        EXEC catalog.deploy_project
+            @folder_name = '$env:SSIS_FOLDER',
+            @project_name = '$env:SSIS_PROJECT',
+            @project_stream = @ProjectBinary;
+        "@
 
         sqlcmd `
-        -S "${{ secrets.SQL_SERVER }}" `
-        -E `
-        -C `
-        -TrustServerCertificate `
-        -d TimesheetDB `
-        -Q "SELECT COUNT(*) AS EmployeeCount FROM Employee"
+          -S $env:SQL_SERVER `
+          -E `
+          -C `
+          -TrustServerCertificate `
+          -d SSISDB `
+          -Q $sql
 
+    - name: Run SQL Server Agent Job
+      shell: powershell
+      run: |
+        sqlcmd `
+          -S $env:SQL_SERVER `
+          -E `
+          -C `
+          -TrustServerCertificate `
+          -d msdb `
+          -Q "
+          EXEC dbo.sp_start_job
+              @job_name = '$env:SQL_AGENT_JOB';
+          "
 
-    # SUCCESS NOTIFICATION
+    - name: Validate Job Started
+      shell: powershell
+      run: |
+        sqlcmd `
+          -S $env:SQL_SERVER `
+          -E `
+          -C `
+          -TrustServerCertificate `
+          -d msdb `
+          -Q "
+          SELECT TOP 1
+              j.name AS JobName,
+              a.start_execution_date,
+              a.stop_execution_date
+          FROM dbo.sysjobs j
+          INNER JOIN dbo.sysjobactivity a
+              ON j.job_id = a.job_id
+          WHERE j.name = '$env:SQL_AGENT_JOB'
+          ORDER BY a.start_execution_date DESC;
+          "
 
     - name: Notify Success
       if: success()
       shell: powershell
       run: |
-
         $payload = @{
-            text = "SSIS Pipeline SUCCESSFUL. Data loaded into TimesheetDB."
-        } | ConvertTo-Json -Depth 10
+          text = "SSIS deployed successfully and SQL Server Agent job was started."
+        } | ConvertTo-Json
 
-        try {
-            Invoke-RestMethod `
-                -Uri $env:TEAMS_WEBHOOK `
-                -Method Post `
-                -Body $payload `
-                -ContentType "application/json"
-        }
-        catch {
-            Write-Host "Failed to send success notification: $($_.Exception.Message)"
-        }
-
-
-    # ROLLBACK (FAILURE)
-
-    - name: Rollback
-      if: failure()
-      shell: powershell
-      run: |
-
-        Write-Host "Rollback triggered..."
-
-        sqlcmd `
-        -S "${{ secrets.SQL_SERVER }}" `
-        -E `
-        -C `
-        -TrustServerCertificate `
-        -d master `
-        -Q "
-        IF DB_ID('TimesheetDB') IS NOT NULL
-        BEGIN
-            DROP DATABASE TimesheetDB
-        END"
-
-
-    # FAILURE NOTIFICATION
+        Invoke-RestMethod `
+          -Uri $env:TEAMS_WEBHOOK `
+          -Method Post `
+          -Body $payload `
+          -ContentType "application/json"
 
     - name: Notify Failure
       if: failure()
       shell: powershell
       run: |
-
         $payload = @{
-            text = "SSIS Pipeline FAILED. Rollback executed for TimesheetDB."
-        } | ConvertTo-Json -Depth 10
+          text = "SSIS deployment or SQL Server Agent job execution failed."
+        } | ConvertTo-Json
 
-        try {
-            Invoke-RestMethod `
-                -Uri $env:TEAMS_WEBHOOK `
-                -Method Post `
-                -Body $payload `
-                -ContentType "application/json"
-        }
-        catch {
-            Write-Host "Failed to send failure notification: $($_.Exception.Message)"
-        }
+        Invoke-RestMethod `
+          -Uri $env:TEAMS_WEBHOOK `
+          -Method Post `
+          -Body $payload `
+          -ContentType "application/json"
