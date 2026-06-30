@@ -1,10 +1,6 @@
 name: Timesheet Migration
 
 on: 
-  push:
-    branches:
-      - main
-
   workflow_dispatch:
 
 jobs:
