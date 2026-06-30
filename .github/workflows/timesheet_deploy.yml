@@ -1,4 +1,4 @@
-name: Deploy SSIS and Run SQL Job
+name: Timesheet Migration
 
 on:
   workflow_dispatch:
