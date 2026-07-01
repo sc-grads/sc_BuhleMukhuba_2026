@@ -4,54 +4,83 @@ on:
   workflow_dispatch:
 
 jobs:
-  run-dtsx:
+  deploy-and-run:
     runs-on: self-hosted
+
+    env:
+      SQL_SERVER: ${{ secrets.SQL_SERVER }}
+
+      # Change these values if your names are different
+      SSIS_FOLDER: Timesheet
+      SSIS_PROJECT: Timesheet_migration
+      SQL_AGENT_JOB: Timesheet_Migration
+
+      # Your SSIS project location in the repo
+      SSIS_PROJECT_PATH: Automation_Project\Timesheet_migration\Timesheet_migration\Timesheet_migration.dtproj
 
     steps:
 
       - name: Checkout Repo
         uses: actions/checkout@v4
 
-      - name: Validate DTSX Package Exists
+      - name: Build SSIS Project Into ISPAC
         shell: powershell
         run: |
-          $package = Get-ChildItem `
+          $vswhere = "${env:ProgramFiles(x86)}\Microsoft Visual Studio\Installer\vswhere.exe"
+
+          if (!(Test-Path $vswhere)) {
+              throw "vswhere.exe not found. Install Visual Studio 2022."
+          }
+
+          $devenv = & $vswhere `
+              -latest `
+              -products * `
+              -find "Common7\IDE\devenv.com"
+
+          if ([string]::IsNullOrWhiteSpace($devenv)) {
+              throw "devenv.com not found. Install Visual Studio 2022 with SSIS Projects support."
+          }
+
+          if (!(Test-Path $env:SSIS_PROJECT_PATH)) {
+              throw "SSIS project file not found: $env:SSIS_PROJECT_PATH"
+          }
+
+          Write-Host "Using Visual Studio:"
+          Write-Host $devenv
+
+          Write-Host "Building SSIS project:"
+          Write-Host $env:SSIS_PROJECT_PATH
+
+          & $devenv $env:SSIS_PROJECT_PATH /Build Development
+
+          if ($LASTEXITCODE -ne 0) {
+              throw "SSIS project build failed."
+          }
+
+          Write-Host "SSIS project built successfully."
+
+      - name: Validate ISPAC Exists
+        shell: powershell
+        run: |
+          $ispac = Get-ChildItem `
             -Path "Automation_Project" `
             -Recurse `
-            -Filter "*.dtsx" |
+            -Filter "*.ispac" |
             Sort-Object LastWriteTime -Descending |
             Select-Object -First 1
 
-          if (!$package) {
-            throw "No DTSX package was found inside Automation_Project."
+          if (!$ispac) {
+              throw "ISPAC file was not generated."
           }
 
-          Write-Host "DTSX package found:"
-          Write-Host $package.FullName
+          Write-Host "ISPAC found:"
+          Write-Host $ispac.FullName
 
-      - name: Find DTExec
-        shell: powershell
-        run: |
-          $dtexec = Get-ChildItem `
-            -Path "C:\Program Files\Microsoft SQL Server" `
-            -Recurse `
-            -Filter "DTExec.exe" `
-            -ErrorAction SilentlyContinue |
-            Sort-Object FullName -Descending |
-            Select-Object -First 1
-
-          if (!$dtexec) {
-            throw "DTExec.exe was not found. Install SQL Server Integration Services on the runner machine."
-          }
-
-          Write-Host "DTExec found:"
-          Write-Host $dtexec.FullName
-
-          "DTEXEC_PATH=$($dtexec.FullName)" | Out-File `
+          "ISPAC_PATH=$($ispac.FullName)" | Out-File `
             -FilePath $env:GITHUB_ENV `
             -Append
 
-      - name: Run DTSX Package
+      - name: Get Package Name
         shell: powershell
         run: |
           $package = Get-ChildItem `
@@ -62,20 +91,191 @@ jobs:
             Select-Object -First 1
 
           if (!$package) {
-            throw "DTSX package was not found."
+              throw "No DTSX package found."
           }
 
-          if (!(Test-Path $env:DTEXEC_PATH)) {
-            throw "DTExec path is invalid: $env:DTEXEC_PATH"
+          Write-Host "Package found:"
+          Write-Host $package.Name
+
+          "SSIS_PACKAGE=$($package.Name)" | Out-File `
+            -FilePath $env:GITHUB_ENV `
+            -Append
+
+      - name: Create SSIS Folder If Missing
+        shell: powershell
+        run: |
+          $folder = $env:SSIS_FOLDER.Replace("'", "''")
+
+          $sql = @"
+          IF NOT EXISTS (
+              SELECT 1
+              FROM catalog.folders
+              WHERE name = N'$folder'
+          )
+          BEGIN
+              EXEC catalog.create_folder
+                  @folder_name = N'$folder';
+
+              PRINT 'SSIS folder created.';
+          END
+          ELSE
+          BEGIN
+              PRINT 'SSIS folder already exists.';
+          END
+          "@
+
+          Invoke-Sqlcmd `
+            -ServerInstance $env:SQL_SERVER `
+            -Database "SSISDB" `
+            -TrustServerCertificate `
+            -Query $sql `
+            -ErrorAction Stop
+
+      - name: Deploy ISPAC If Project Is Missing
+        shell: powershell
+        run: |
+          if (!(Test-Path $env:ISPAC_PATH)) {
+              throw "ISPAC path is invalid: $env:ISPAC_PATH"
           }
 
-          Write-Host "Running package:"
-          Write-Host $package.FullName
+          $folder = $env:SSIS_FOLDER.Replace("'", "''")
+          $project = $env:SSIS_PROJECT.Replace("'", "''")
+          $ispacPath = $env:ISPAC_PATH.Replace("'", "''")
 
-          & "$env:DTEXEC_PATH" /FILE "$($package.FullName)"
+          $sql = @"
+          IF NOT EXISTS (
+              SELECT 1
+              FROM catalog.projects p
+              INNER JOIN catalog.folders f
+                  ON p.folder_id = f.folder_id
+              WHERE f.name = N'$folder'
+                AND p.name = N'$project'
+          )
+          BEGIN
+              DECLARE @ProjectBinary VARBINARY(MAX);
 
-          if ($LASTEXITCODE -ne 0) {
-            throw "DTSX package execution failed with exit code $LASTEXITCODE."
-          }
+              SELECT @ProjectBinary = BulkColumn
+              FROM OPENROWSET(
+                  BULK '$ispacPath',
+                  SINGLE_BLOB
+              ) AS ProjectFile;
 
-          Write-Host "DTSX package executed successfully."
+              EXEC catalog.deploy_project
+                  @folder_name = N'$folder',
+                  @project_name = N'$project',
+                  @project_stream = @ProjectBinary;
+
+              PRINT 'SSIS project deployed.';
+          END
+          ELSE
+          BEGIN
+              PRINT 'SSIS project already deployed. Deployment skipped.';
+          END
+          "@
+
+          Invoke-Sqlcmd `
+            -ServerInstance $env:SQL_SERVER `
+            -Database "SSISDB" `
+            -TrustServerCertificate `
+            -Query $sql `
+            -ErrorAction Stop
+
+      - name: Create SQL Server Agent Job If Missing
+        shell: powershell
+        run: |
+          $jobName = $env:SQL_AGENT_JOB.Replace("'", "''")
+          $folder = $env:SSIS_FOLDER.Replace("'", "''")
+          $project = $env:SSIS_PROJECT.Replace("'", "''")
+          $package = $env:SSIS_PACKAGE.Replace("'", "''")
+
+          $jobStepCommand = @"
+          DECLARE @execution_id BIGINT;
+
+          EXEC SSISDB.catalog.create_execution
+              @folder_name = N'$folder',
+              @project_name = N'$project',
+              @package_name = N'$package',
+              @execution_id = @execution_id OUTPUT;
+
+          EXEC SSISDB.catalog.start_execution
+              @execution_id = @execution_id;
+          "@
+
+          $jobStepCommand = $jobStepCommand.Replace("'", "''")
+
+          $sql = @"
+          USE msdb;
+
+          IF NOT EXISTS (
+              SELECT 1
+              FROM dbo.sysjobs
+              WHERE name = N'$jobName'
+          )
+          BEGIN
+              EXEC dbo.sp_add_job
+                  @job_name = N'$jobName',
+                  @enabled = 1,
+                  @description = N'Runs the Timesheet SSIS package from SSISDB.';
+
+              EXEC dbo.sp_add_jobstep
+                  @job_name = N'$jobName',
+                  @step_name = N'Run SSIS Package From SSISDB',
+                  @subsystem = N'TSQL',
+                  @database_name = N'master',
+                  @command = N'$jobStepCommand',
+                  @on_success_action = 1,
+                  @on_fail_action = 2;
+
+              EXEC dbo.sp_add_jobserver
+                  @job_name = N'$jobName';
+
+              PRINT 'SQL Server Agent job created.';
+          END
+          ELSE
+          BEGIN
+              PRINT 'SQL Server Agent job already exists. Job creation skipped.';
+          END
+          "@
+
+          Invoke-Sqlcmd `
+            -ServerInstance $env:SQL_SERVER `
+            -Database "msdb" `
+            -TrustServerCertificate `
+            -Query $sql `
+            -ErrorAction Stop
+
+      - name: Run SQL Server Agent Job
+        shell: powershell
+        run: |
+          $jobName = $env:SQL_AGENT_JOB.Replace("'", "''")
+
+          Invoke-Sqlcmd `
+            -ServerInstance $env:SQL_SERVER `
+            -Database "msdb" `
+            -TrustServerCertificate `
+            -Query "EXEC dbo.sp_start_job @job_name = N'$jobName';" `
+            -ErrorAction Stop
+
+          Write-Host "SQL Server Agent job started: $env:SQL_AGENT_JOB"
+
+      - name: Validate Job Started
+        shell: powershell
+        run: |
+          $jobName = $env:SQL_AGENT_JOB.Replace("'", "''")
+
+          Invoke-Sqlcmd `
+            -ServerInstance $env:SQL_SERVER `
+            -Database "msdb" `
+            -TrustServerCertificate `
+            -Query "
+            SELECT TOP 1
+                j.name AS JobName,
+                a.start_execution_date,
+                a.stop_execution_date
+            FROM dbo.sysjobs j
+            INNER JOIN dbo.sysjobactivity a
+                ON j.job_id = a.job_id
+            WHERE j.name = N'$jobName'
+            ORDER BY a.start_execution_date DESC;
+            " `
+            -ErrorAction Stop
