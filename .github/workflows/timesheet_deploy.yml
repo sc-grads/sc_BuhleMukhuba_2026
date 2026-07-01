@@ -10,7 +10,6 @@ jobs:
 
     env:
       SQL_SERVER: ${{ secrets.SQL_SERVER }}
-      TEAMS_WEBHOOK: ${{ secrets.TEAMS_WEBHOOK_URL }}
       SSIS_FOLDER: Timesheet
       SSIS_PROJECT: Timesheet_Migration
       SQL_AGENT_JOB: Timesheet_ETL_Load
@@ -19,19 +18,6 @@ jobs:
 
     - name: Checkout Repo
       uses: actions/checkout@v4
-
-    - name: Notify Start
-      shell: powershell
-      run: |
-        $payload = @{
-          text = "SSIS deployment started."
-        } | ConvertTo-Json
-
-        Invoke-RestMethod `
-          -Uri $env:TEAMS_WEBHOOK `
-          -Method Post `
-          -Body $payload `
-          -ContentType "application/json"
 
     - name: Build SSIS Project
       shell: powershell
@@ -149,31 +135,3 @@ jobs:
           WHERE j.name = '$env:SQL_AGENT_JOB'
           ORDER BY a.start_execution_date DESC;
           "
-
-    - name: Notify Success
-      if: success()
-      shell: powershell
-      run: |
-        $payload = @{
-          text = "SSIS deployed successfully and SQL Server Agent job was started."
-        } | ConvertTo-Json
-
-        Invoke-RestMethod `
-          -Uri $env:TEAMS_WEBHOOK `
-          -Method Post `
-          -Body $payload `
-          -ContentType "application/json"
-
-    - name: Notify Failure
-      if: failure()
-      shell: powershell
-      run: |
-        $payload = @{
-          text = "SSIS deployment or SQL Server Agent job execution failed."
-        } | ConvertTo-Json
-
-        Invoke-RestMethod `
-          -Uri $env:TEAMS_WEBHOOK `
-          -Method Post `
-          -Body $payload `
-          -ContentType "application/json"
