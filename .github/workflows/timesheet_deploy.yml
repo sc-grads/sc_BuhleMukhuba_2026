@@ -4,159 +4,78 @@ on:
   workflow_dispatch:
 
 jobs:
-  deploy-and-run:
+  run-dtsx:
     runs-on: self-hosted
-
-    env:
-      SQL_SERVER: ${{ secrets.SQL_SERVER }}
-      SSIS_FOLDER: Migration
-      SSIS_PROJECT: Timesheet_migration
-      SQL_AGENT_JOB: Timesheet_Migration
 
     steps:
 
       - name: Checkout Repo
         uses: actions/checkout@v4
 
-      - name: Build SSIS Project Using Visual Studio
+      - name: Validate DTSX Package Exists
         shell: powershell
         run: |
-          $vswhere = "${env:ProgramFiles(x86)}\Microsoft Visual Studio\Installer\vswhere.exe"
+          $package = Get-ChildItem `
+            -Path "Automation_Project" `
+            -Recurse `
+            -Filter "*.dtsx" |
+            Sort-Object LastWriteTime -Descending |
+            Select-Object -First 1
 
-          if (!(Test-Path $vswhere)) {
-              throw "vswhere.exe not found. Install Visual Studio 2022."
+          if (!$package) {
+            throw "No DTSX package was found inside Automation_Project."
           }
 
-          $devenv = & $vswhere `
-              -latest `
-              -products * `
-              -find "Common7\IDE\devenv.com"
+          Write-Host "DTSX package found:"
+          Write-Host $package.FullName
 
-          if ([string]::IsNullOrWhiteSpace($devenv)) {
-              throw "devenv.com not found. Install Visual Studio 2022, not only Build Tools."
+      - name: Find DTExec
+        shell: powershell
+        run: |
+          $dtexec = Get-ChildItem `
+            -Path "C:\Program Files\Microsoft SQL Server" `
+            -Recurse `
+            -Filter "DTExec.exe" `
+            -ErrorAction SilentlyContinue |
+            Sort-Object FullName -Descending |
+            Select-Object -First 1
+
+          if (!$dtexec) {
+            throw "DTExec.exe was not found. Install SQL Server Integration Services on the runner machine."
           }
 
-          Write-Host "Using Visual Studio:"
-          Write-Host $devenv
+          Write-Host "DTExec found:"
+          Write-Host $dtexec.FullName
 
-          $project = Resolve-Path "Automation_Project\Timesheet_migration\Timesheet_migration\Timesheet_migration.dtproj"
+          "DTEXEC_PATH=$($dtexec.FullName)" | Out-File `
+            -FilePath $env:GITHUB_ENV `
+            -Append
 
-          Write-Host "Building SSIS project:"
-          Write-Host $project
+      - name: Run DTSX Package
+        shell: powershell
+        run: |
+          $package = Get-ChildItem `
+            -Path "Automation_Project" `
+            -Recurse `
+            -Filter "*.dtsx" |
+            Sort-Object LastWriteTime -Descending |
+            Select-Object -First 1
 
-          & $devenv $project /Build Development
+          if (!$package) {
+            throw "DTSX package was not found."
+          }
+
+          if (!(Test-Path $env:DTEXEC_PATH)) {
+            throw "DTExec path is invalid: $env:DTEXEC_PATH"
+          }
+
+          Write-Host "Running package:"
+          Write-Host $package.FullName
+
+          & "$env:DTEXEC_PATH" /FILE "$($package.FullName)"
 
           if ($LASTEXITCODE -ne 0) {
-              throw "Visual Studio SSIS project build failed."
+            throw "DTSX package execution failed with exit code $LASTEXITCODE."
           }
 
-          Write-Host "SSIS project built successfully."
-
-      - name: Validate ISPAC Exists
-        shell: powershell
-        run: |
-          $ispac = Get-ChildItem `
-            -Path "Automation_Project" `
-            -Recurse `
-            -Filter *.ispac |
-            Sort-Object LastWriteTime -Descending |
-            Select-Object -First 1
-
-          if (!$ispac) {
-            throw "ISPAC file was not generated."
-          }
-
-          Write-Host "ISPAC found:"
-          Write-Host $ispac.FullName
-
-      - name: Create SSIS Folder If Missing
-        shell: powershell
-        run: |
-          Invoke-Sqlcmd `
-            -ServerInstance $env:SQL_SERVER `
-            -Database "SSISDB" `
-            -TrustServerCertificate `
-            -Query "
-            IF NOT EXISTS (
-                SELECT 1
-                FROM catalog.folders
-                WHERE name = '$env:SSIS_FOLDER'
-            )
-            BEGIN
-                EXEC catalog.create_folder
-                    @folder_name = '$env:SSIS_FOLDER';
-            END
-            " `
-            -ErrorAction Stop
-
-      - name: Deploy ISPAC to SSISDB
-        shell: powershell
-        run: |
-          $ispac = Get-ChildItem `
-            -Path "Automation_Project" `
-            -Recurse `
-            -Filter *.ispac |
-            Sort-Object LastWriteTime -Descending |
-            Select-Object -First 1
-
-          if (!$ispac) {
-            throw "ISPAC file not found."
-          }
-
-          $ispacPath = $ispac.FullName.Replace("'", "''")
-
-          $sql = @"
-          DECLARE @ProjectBinary VARBINARY(MAX);
-
-          SELECT @ProjectBinary = BulkColumn
-          FROM OPENROWSET(
-              BULK '$ispacPath',
-              SINGLE_BLOB
-          ) AS ProjectFile;
-
-          EXEC catalog.deploy_project
-              @folder_name = '$env:SSIS_FOLDER',
-              @project_name = '$env:SSIS_PROJECT',
-              @project_stream = @ProjectBinary;
-          "@
-
-          Invoke-Sqlcmd `
-            -ServerInstance $env:SQL_SERVER `
-            -Database "SSISDB" `
-            -TrustServerCertificate `
-            -Query $sql `
-            -ErrorAction Stop
-
-          Write-Host "ISPAC deployed successfully."
-
-      - name: Run SQL Server Agent Job
-        shell: powershell
-        run: |
-          Invoke-Sqlcmd `
-            -ServerInstance $env:SQL_SERVER `
-            -Database "msdb" `
-            -TrustServerCertificate `
-            -Query "EXEC dbo.sp_start_job @job_name = '$env:SQL_AGENT_JOB';" `
-            -ErrorAction Stop
-
-          Write-Host "SQL Server Agent job started."
-
-      - name: Validate Job Started
-        shell: powershell
-        run: |
-          Invoke-Sqlcmd `
-            -ServerInstance $env:SQL_SERVER `
-            -Database "msdb" `
-            -TrustServerCertificate `
-            -Query "
-            SELECT TOP 1
-                j.name AS JobName,
-                a.start_execution_date,
-                a.stop_execution_date
-            FROM dbo.sysjobs j
-            INNER JOIN dbo.sysjobactivity a
-                ON j.job_id = a.job_id
-            WHERE j.name = '$env:SQL_AGENT_JOB'
-            ORDER BY a.start_execution_date DESC;
-            " `
-            -ErrorAction Stop
+          Write-Host "DTSX package executed successfully."
