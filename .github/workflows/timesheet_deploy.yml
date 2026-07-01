@@ -5,158 +5,140 @@ on:
 
 jobs:
   deploy-and-run:
-
     runs-on: self-hosted
 
     env:
       SQL_SERVER: ${{ secrets.SQL_SERVER }}
-      SSIS_FOLDER: Timesheet
+      SSIS_FOLDER: Migration
       SSIS_PROJECT: Timesheet_Migration
-      SQL_AGENT_JOB: Timesheet_ETL_Load
+      SQL_AGENT_JOB: Timesheet_Migration
 
     steps:
+      - name: Checkout Repo
+        uses: actions/checkout@v4
 
-    - name: Checkout Repo
-      uses: actions/checkout@v4
+      - name: Build SSIS Project
+        shell: powershell
+        run: |
+          $vswhere = "${env:ProgramFiles(x86)}\Microsoft Visual Studio\Installer\vswhere.exe"
 
-    - name: Build SSIS Project
-      shell: powershell
-      run: |
+          if (!(Test-Path $vswhere)) {
+            throw "vswhere.exe not found. Install Visual Studio or Build Tools."
+          }
 
-        $vswhere = "${env:ProgramFiles(x86)}\Microsoft Visual Studio\Installer\vswhere.exe"
-
-        if (!(Test-Path $vswhere)) {
-            throw "vswhere.exe not found. Install Visual Studio or Visual Studio Build Tools."
-        }
-
-        $msbuild = & $vswhere `
+          $msbuild = & $vswhere `
             -latest `
             -requires Microsoft.Component.MSBuild `
             -find "MSBuild\**\Bin\MSBuild.exe"
 
-        if ([string]::IsNullOrWhiteSpace($msbuild)) {
-            throw "MSBuild could not be found."
-        }
+          if ([string]::IsNullOrWhiteSpace($msbuild)) {
+            throw "MSBuild not found."
+          }
 
-        Write-Host "Using MSBuild:"
-        Write-Host $msbuild
+          $project = Resolve-Path "Automation_Project\Timesheet_Migration\Timesheet_Migration\Timesheet_Migration.dtproj"
 
-        $project = Resolve-Path "Automation_Project\Timesheet_Migration\Timesheet_Migration.dtproj"
-
-        Write-Host "Building project:"
-        Write-Host $project
-
-        & $msbuild `
+          & $msbuild `
             $project `
             /t:Build `
             /p:Configuration=Development `
             /p:Platform="Any CPU"
 
-        if ($LASTEXITCODE -ne 0) {
-            throw "MSBuild failed with exit code $LASTEXITCODE."
-        }
+          if ($LASTEXITCODE -ne 0) {
+            throw "SSIS project build failed."
+          }
 
-        Write-Host "SSIS project built successfully."
+      - name: Validate ISPAC
+        shell: powershell
+        run: |
+          $ispac = Get-ChildItem `
+            -Path "Automation_Project" `
+            -Recurse `
+            -Filter *.ispac |
+            Select-Object -First 1
 
-    - name: Validate ISPAC Exists
-      shell: powershell
-      run: |
-        $ispac = Get-ChildItem `
-          -Path "Automation_Project" `
-          -Recurse `
-          -Filter *.ispac |
-          Select-Object -First 1
+          if (!$ispac) {
+            throw "ISPAC file was not generated."
+          }
 
-        if (!$ispac) {
-          throw "ISPAC file was not generated."
-        }
+          Write-Host "ISPAC found: $($ispac.FullName)"
 
-        Write-Host "ISPAC found: $($ispac.FullName)"
+      - name: Create SSIS Folder
+        shell: powershell
+        run: |
+          Invoke-Sqlcmd `
+            -ServerInstance $env:SQL_SERVER `
+            -Database "SSISDB" `
+            -TrustServerCertificate `
+            -Query "
+            IF NOT EXISTS (
+                SELECT 1
+                FROM catalog.folders
+                WHERE name = '$env:SSIS_FOLDER'
+            )
+            BEGIN
+                EXEC catalog.create_folder
+                    @folder_name = '$env:SSIS_FOLDER';
+            END
+            " `
+            -ErrorAction Stop
 
-    - name: Create SSIS Folder If Missing
-      shell: powershell
-      run: |
-        sqlcmd `
-          -S $env:SQL_SERVER `
-          -E `
-          -C `
-          -TrustServerCertificate `
-          -d SSISDB `
-          -Q "
-          IF NOT EXISTS (
-              SELECT 1
-              FROM catalog.folders
-              WHERE name = '$env:SSIS_FOLDER'
-          )
-          BEGIN
-              EXEC catalog.create_folder
-                  @folder_name = '$env:SSIS_FOLDER';
-          END
-          "
+      - name: Deploy ISPAC to SSISDB
+        shell: powershell
+        run: |
+          $ispac = Get-ChildItem `
+            -Path "Automation_Project" `
+            -Recurse `
+            -Filter *.ispac |
+            Select-Object -First 1
 
-    - name: Deploy ISPAC to SSISDB
-      shell: powershell
-      run: |
-        $ispac = Get-ChildItem `
-          -Path "Automation_Project" `
-          -Recurse `
-          -Filter *.ispac |
-          Select-Object -First 1
+          $sql = @"
+          DECLARE @ProjectBinary VARBINARY(MAX);
 
-        $sql = @"
-        DECLARE @ProjectBinary VARBINARY(MAX);
+          SELECT @ProjectBinary = BulkColumn
+          FROM OPENROWSET(
+              BULK '$($ispac.FullName)',
+              SINGLE_BLOB
+          ) AS ProjectFile;
 
-        SELECT @ProjectBinary = BulkColumn
-        FROM OPENROWSET(
-            BULK '$($ispac.FullName)',
-            SINGLE_BLOB
-        ) AS ProjectFile;
+          EXEC catalog.deploy_project
+              @folder_name = '$env:SSIS_FOLDER',
+              @project_name = '$env:SSIS_PROJECT',
+              @project_stream = @ProjectBinary;
+          "@
 
-        EXEC catalog.deploy_project
-            @folder_name = '$env:SSIS_FOLDER',
-            @project_name = '$env:SSIS_PROJECT',
-            @project_stream = @ProjectBinary;
-        "@
+          Invoke-Sqlcmd `
+            -ServerInstance $env:SQL_SERVER `
+            -Database "SSISDB" `
+            -TrustServerCertificate `
+            -Query $sql `
+            -ErrorAction Stop
 
-        sqlcmd `
-          -S $env:SQL_SERVER `
-          -E `
-          -C `
-          -TrustServerCertificate `
-          -d SSISDB `
-          -Q $sql
+      - name: Run SQL Server Agent Job
+        shell: powershell
+        run: |
+          Invoke-Sqlcmd `
+            -ServerInstance $env:SQL_SERVER `
+            -Database "msdb" `
+            -TrustServerCertificate `
+            -Query "EXEC dbo.sp_start_job @job_name = '$env:SQL_AGENT_JOB';" `
+            -ErrorAction Stop
 
-    - name: Run SQL Server Agent Job
-      shell: powershell
-      run: |
-        sqlcmd `
-          -S $env:SQL_SERVER `
-          -E `
-          -C `
-          -TrustServerCertificate `
-          -d msdb `
-          -Q "
-          EXEC dbo.sp_start_job
-              @job_name = '$env:SQL_AGENT_JOB';
-          "
-
-    - name: Validate Job Started
-      shell: powershell
-      run: |
-        sqlcmd `
-          -S $env:SQL_SERVER `
-          -E `
-          -C `
-          -TrustServerCertificate `
-          -d msdb `
-          -Q "
-          SELECT TOP 1
-              j.name AS JobName,
-              a.start_execution_date,
-              a.stop_execution_date
-          FROM dbo.sysjobs j
-          INNER JOIN dbo.sysjobactivity a
-              ON j.job_id = a.job_id
-          WHERE j.name = '$env:SQL_AGENT_JOB'
-          ORDER BY a.start_execution_date DESC;
-          "
+      - name: Validate Job Started
+        shell: powershell
+        run: |
+          Invoke-Sqlcmd `
+            -ServerInstance $env:SQL_SERVER `
+            -Database "msdb" `
+            -TrustServerCertificate `
+            -Query "
+            SELECT TOP 1
+                j.name AS JobName,
+                a.start_execution_date,
+                a.stop_execution_date
+            FROM dbo.sysjobs j
+            INNER JOIN dbo.sysjobactivity a
+                ON j.job_id = a.job_id
+            WHERE j.name = '$env:SQL_AGENT_JOB'
+            ORDER BY a.start_execution_date DESC;
+            " `
+            -ErrorAction Stop
