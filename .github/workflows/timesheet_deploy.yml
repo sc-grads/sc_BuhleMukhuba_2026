@@ -10,7 +10,7 @@ jobs:
     env:
       SQL_SERVER: ${{ secrets.SQL_SERVER }}
       SSIS_FOLDER: Migration
-      SSIS_PROJECT: Timesheet_Migration
+      SSIS_PROJECT: Timesheet_migration
       SQL_AGENT_JOB: Timesheet_Migration
 
     steps:
@@ -35,7 +35,7 @@ jobs:
             throw "MSBuild not found."
           }
 
-          $project = Resolve-Path "Automation_Project\Timesheet_Migration\Timesheet_Migration\Timesheet_Migration.dtproj"
+          $project = Resolve-Path "Automation_Project\Timesheet_migration\Timesheet_migration\Timesheet_migration.dtproj"
 
           & $msbuild `
             $project `
