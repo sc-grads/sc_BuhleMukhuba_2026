@@ -1,4 +1,5 @@
 name: Timesheet Migration
+name: Deploy SSIS Project and Run Job
 
 on:
   workflow_dispatch:
@@ -14,55 +15,62 @@ jobs:
       SQL_AGENT_JOB: Timesheet_Migration
 
     steps:
+
       - name: Checkout Repo
         uses: actions/checkout@v4
 
-      - name: Build SSIS Project
+      - name: Build SSIS Project Using Visual Studio
         shell: powershell
         run: |
           $vswhere = "${env:ProgramFiles(x86)}\Microsoft Visual Studio\Installer\vswhere.exe"
 
           if (!(Test-Path $vswhere)) {
-            throw "vswhere.exe not found. Install Visual Studio or Build Tools."
+              throw "vswhere.exe not found. Install Visual Studio 2022."
           }
 
-          $msbuild = & $vswhere `
-            -latest `
-            -requires Microsoft.Component.MSBuild `
-            -find "MSBuild\**\Bin\MSBuild.exe"
+          $devenv = & $vswhere `
+              -latest `
+              -products * `
+              -find "Common7\IDE\devenv.com"
 
-          if ([string]::IsNullOrWhiteSpace($msbuild)) {
-            throw "MSBuild not found."
+          if ([string]::IsNullOrWhiteSpace($devenv)) {
+              throw "devenv.com not found. Install Visual Studio 2022, not only Build Tools."
           }
+
+          Write-Host "Using Visual Studio:"
+          Write-Host $devenv
 
           $project = Resolve-Path "Automation_Project\Timesheet_migration\Timesheet_migration\Timesheet_migration.dtproj"
 
-          & $msbuild `
-            $project `
-            /t:Build `
-            /p:Configuration=Development `
-            /p:Platform="Any CPU"
+          Write-Host "Building SSIS project:"
+          Write-Host $project
+
+          & $devenv $project /Build Development
 
           if ($LASTEXITCODE -ne 0) {
-            throw "SSIS project build failed."
+              throw "Visual Studio SSIS project build failed."
           }
 
-      - name: Validate ISPAC
+          Write-Host "SSIS project built successfully."
+
+      - name: Validate ISPAC Exists
         shell: powershell
         run: |
           $ispac = Get-ChildItem `
             -Path "Automation_Project" `
             -Recurse `
             -Filter *.ispac |
+            Sort-Object LastWriteTime -Descending |
             Select-Object -First 1
 
           if (!$ispac) {
             throw "ISPAC file was not generated."
           }
 
-          Write-Host "ISPAC found: $($ispac.FullName)"
+          Write-Host "ISPAC found:"
+          Write-Host $ispac.FullName
 
-      - name: Create SSIS Folder
+      - name: Create SSIS Folder If Missing
         shell: powershell
         run: |
           Invoke-Sqlcmd `
@@ -89,14 +97,21 @@ jobs:
             -Path "Automation_Project" `
             -Recurse `
             -Filter *.ispac |
+            Sort-Object LastWriteTime -Descending |
             Select-Object -First 1
+
+          if (!$ispac) {
+            throw "ISPAC file not found."
+          }
+
+          $ispacPath = $ispac.FullName.Replace("'", "''")
 
           $sql = @"
           DECLARE @ProjectBinary VARBINARY(MAX);
 
           SELECT @ProjectBinary = BulkColumn
           FROM OPENROWSET(
-              BULK '$($ispac.FullName)',
+              BULK '$ispacPath',
               SINGLE_BLOB
           ) AS ProjectFile;
 
@@ -113,6 +128,8 @@ jobs:
             -Query $sql `
             -ErrorAction Stop
 
+          Write-Host "ISPAC deployed successfully."
+
       - name: Run SQL Server Agent Job
         shell: powershell
         run: |
@@ -122,6 +139,8 @@ jobs:
             -TrustServerCertificate `
             -Query "EXEC dbo.sp_start_job @job_name = '$env:SQL_AGENT_JOB';" `
             -ErrorAction Stop
+
+          Write-Host "SQL Server Agent job started."
 
       - name: Validate Job Started
         shell: powershell
