@@ -22,16 +22,41 @@ jobs:
     - name: Build SSIS Project
       shell: powershell
       run: |
-        $msbuild = "C:\Program Files\Microsoft Visual Studio\2022\BuildTools\MSBuild\Current\Bin\MSBuild.exe"
 
-        if (!(Test-Path $msbuild)) {
-          throw "MSBuild not found. Install Visual Studio Build Tools with SSDT."
+        $vswhere = "${env:ProgramFiles(x86)}\Microsoft Visual Studio\Installer\vswhere.exe"
+
+        if (!(Test-Path $vswhere)) {
+            throw "vswhere.exe not found. Install Visual Studio or Visual Studio Build Tools."
         }
 
+        $msbuild = & $vswhere `
+            -latest `
+            -requires Microsoft.Component.MSBuild `
+            -find "MSBuild\**\Bin\MSBuild.exe"
+
+        if ([string]::IsNullOrWhiteSpace($msbuild)) {
+            throw "MSBuild could not be found."
+        }
+
+        Write-Host "Using MSBuild:"
+        Write-Host $msbuild
+
+        $project = Resolve-Path "Automation_Project\Timesheet_Migration\Timesheet_Migration.dtproj"
+
+        Write-Host "Building project:"
+        Write-Host $project
+
         & $msbuild `
-          "Automation_Project\Timesheet_Migration\Timesheet_Migration.dtproj" `
-          /p:Configuration=Development `
-          /p:Platform="Any CPU"
+            $project `
+            /t:Build `
+            /p:Configuration=Development `
+            /p:Platform="Any CPU"
+
+        if ($LASTEXITCODE -ne 0) {
+            throw "MSBuild failed with exit code $LASTEXITCODE."
+        }
+
+        Write-Host "SSIS project built successfully."
 
     - name: Validate ISPAC Exists
       shell: powershell
