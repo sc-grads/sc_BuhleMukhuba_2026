@@ -9,13 +9,9 @@ jobs:
 
     env:
       SQL_SERVER: ${{ secrets.SQL_SERVER }}
-
-      # Change these values if your names are different
-      SSIS_FOLDER: Timesheet
+      SSIS_FOLDER: Migration
       SSIS_PROJECT: Timesheet_migration
       SQL_AGENT_JOB: Timesheet_Migration
-
-      # Your SSIS project location in the repo
       SSIS_PROJECT_PATH: Automation_Project\Timesheet_migration\Timesheet_migration\Timesheet_migration.dtproj
 
     steps:
@@ -26,32 +22,44 @@ jobs:
       - name: Build SSIS Project Into ISPAC
         shell: powershell
         run: |
-          $vswhere = "${env:ProgramFiles(x86)}\Microsoft Visual Studio\Installer\vswhere.exe"
-
-          if (!(Test-Path $vswhere)) {
-              throw "vswhere.exe not found. Install Visual Studio 2022."
-          }
-
-          $devenv = & $vswhere `
-              -latest `
-              -products * `
-              -find "Common7\IDE\devenv.com"
-
-          if ([string]::IsNullOrWhiteSpace($devenv)) {
-              throw "devenv.com not found. Install Visual Studio 2022 with SSIS Projects support."
-          }
-
           if (!(Test-Path $env:SSIS_PROJECT_PATH)) {
               throw "SSIS project file not found: $env:SSIS_PROJECT_PATH"
           }
 
+          $devenv = Get-ChildItem `
+            -Path "C:\Program Files\Microsoft Visual Studio" `
+            -Recurse `
+            -Filter "devenv.com" `
+            -ErrorAction SilentlyContinue |
+            Sort-Object FullName -Descending |
+            Select-Object -First 1
+
+          if (!$devenv) {
+              $devenvExe = Get-ChildItem `
+                -Path "C:\Program Files\Microsoft Visual Studio" `
+                -Recurse `
+                -Filter "devenv.exe" `
+                -ErrorAction SilentlyContinue |
+                Sort-Object FullName -Descending |
+                Select-Object -First 1
+
+              if (!$devenvExe) {
+                  throw "devenv.com/devenv.exe not found. Full Visual Studio with SSIS Projects support must be installed on the self-hosted runner."
+              }
+
+              $devenvPath = $devenvExe.FullName
+          }
+          else {
+              $devenvPath = $devenv.FullName
+          }
+
           Write-Host "Using Visual Studio:"
-          Write-Host $devenv
+          Write-Host $devenvPath
 
           Write-Host "Building SSIS project:"
           Write-Host $env:SSIS_PROJECT_PATH
 
-          & $devenv $env:SSIS_PROJECT_PATH /Build Development
+          & $devenvPath $env:SSIS_PROJECT_PATH /Build Development
 
           if ($LASTEXITCODE -ne 0) {
               throw "SSIS project build failed."
