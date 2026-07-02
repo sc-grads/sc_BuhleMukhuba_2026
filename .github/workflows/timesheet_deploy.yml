@@ -5,7 +5,7 @@ on:
 
 jobs:
   deploy-and-run:
-    runs-on: self-hosted
+    runs-on: [self-hosted, buhle-runner]
 
     env:
       SQL_SERVER: ${{ secrets.SQL_SERVER }}
