@@ -138,9 +138,9 @@ jobs:
             -Query $sql `
             -ErrorAction Stop
 
-           - name: Deploy ISPAC to SSISDB
-             shell: powershell
-             run: |
+      - name: Deploy ISPAC to SSISDB
+        shell: powershell
+        run: |
           if (!(Test-Path $env:ISPAC_PATH)) {
               throw "ISPAC path is invalid: $env:ISPAC_PATH"
           }
@@ -206,6 +206,7 @@ jobs:
           "@
 
           $jobStepCommand = $jobStepCommand.Replace("'", "''")
+          $scheduleNameSql = $scheduleName.Replace("'", "''")
 
           $sql = @"
           USE msdb;
@@ -273,11 +274,11 @@ jobs:
           IF NOT EXISTS (
               SELECT 1
               FROM dbo.sysschedules
-              WHERE name = N'$scheduleName'
+              WHERE name = N'$scheduleNameSql'
           )
           BEGIN
               EXEC dbo.sp_add_schedule
-                  @schedule_name = N'$scheduleName',
+                  @schedule_name = N'$scheduleNameSql',
                   @enabled = 1,
                   @freq_type = 4,
                   @freq_interval = 1,
@@ -290,7 +291,7 @@ jobs:
           ELSE
           BEGIN
               EXEC dbo.sp_update_schedule
-                  @name = N'$scheduleName',
+                  @name = N'$scheduleNameSql',
                   @enabled = 1,
                   @freq_type = 4,
                   @freq_interval = 1,
@@ -309,12 +310,12 @@ jobs:
               INNER JOIN dbo.sysschedules s
                   ON js.schedule_id = s.schedule_id
               WHERE j.name = N'$jobName'
-                AND s.name = N'$scheduleName'
+                AND s.name = N'$scheduleNameSql'
           )
           BEGIN
               EXEC dbo.sp_attach_schedule
                   @job_name = N'$jobName',
-                  @schedule_name = N'$scheduleName';
+                  @schedule_name = N'$scheduleNameSql';
 
               PRINT 'Schedule attached to job.';
           END
