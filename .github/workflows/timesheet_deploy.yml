@@ -138,7 +138,7 @@ jobs:
             -Query $sql `
             -ErrorAction Stop
 
-      - name: Deploy ISPAC If Project Is Missing
+          - name: Deploy ISPAC to SSISDB
         shell: powershell
         run: |
           if (!(Test-Path $env:ISPAC_PATH)) {
@@ -150,34 +150,20 @@ jobs:
           $ispacPath = $env:ISPAC_PATH.Replace("'", "''")
 
           $sql = @"
-          IF NOT EXISTS (
-              SELECT 1
-              FROM catalog.projects p
-              INNER JOIN catalog.folders f
-                  ON p.folder_id = f.folder_id
-              WHERE f.name = N'$folder'
-                AND p.name = N'$project'
-          )
-          BEGIN
-              DECLARE @ProjectBinary VARBINARY(MAX);
+          DECLARE @ProjectBinary VARBINARY(MAX);
 
-              SELECT @ProjectBinary = BulkColumn
-              FROM OPENROWSET(
-                  BULK '$ispacPath',
-                  SINGLE_BLOB
-              ) AS ProjectFile;
+          SELECT @ProjectBinary = BulkColumn
+          FROM OPENROWSET(
+              BULK '$ispacPath',
+              SINGLE_BLOB
+          ) AS ProjectFile;
 
-              EXEC catalog.deploy_project
-                  @folder_name = N'$folder',
-                  @project_name = N'$project',
-                  @project_stream = @ProjectBinary;
+          EXEC catalog.deploy_project
+              @folder_name = N'$folder',
+              @project_name = N'$project',
+              @project_stream = @ProjectBinary;
 
-              PRINT 'SSIS project deployed.';
-          END
-          ELSE
-          BEGIN
-              PRINT 'SSIS project already deployed. Deployment skipped.';
-          END
+          PRINT 'SSIS project deployed or redeployed successfully.';
           "@
 
           Invoke-Sqlcmd `
