@@ -138,9 +138,9 @@ jobs:
             -Query $sql `
             -ErrorAction Stop
 
-          - name: Deploy ISPAC to SSISDB
-            shell: powershell
-            run: |
+      - name: Deploy ISPAC to SSISDB
+        shell: powershell
+        run: |
           if (!(Test-Path $env:ISPAC_PATH)) {
               throw "ISPAC path is invalid: $env:ISPAC_PATH"
           }
@@ -172,7 +172,7 @@ jobs:
             -Query $sql `
             -ErrorAction Stop
 
-      - name: Create SQL Server Agent Job If Missing
+      - name: Create SQL Server Agent Job And Schedule
         shell: powershell
         run: |
           $jobName = $env:SQL_AGENT_JOB.Replace("'", "''")
@@ -210,6 +210,43 @@ jobs:
                   @enabled = 1,
                   @description = N'Runs the Timesheet SSIS package from SSISDB.';
 
+              EXEC dbo.sp_add_jobserver
+                  @job_name = N'$jobName';
+
+              PRINT 'SQL Server Agent job created.';
+          END
+          ELSE
+          BEGIN
+              EXEC dbo.sp_update_job
+                  @job_name = N'$jobName',
+                  @enabled = 1;
+
+              PRINT 'SQL Server Agent job already exists. Job enabled.';
+          END
+
+          IF EXISTS (
+              SELECT 1
+              FROM dbo.sysjobsteps js
+              INNER JOIN dbo.sysjobs j
+                  ON js.job_id = j.job_id
+              WHERE j.name = N'$jobName'
+                AND js.step_id = 1
+          )
+          BEGIN
+              EXEC dbo.sp_update_jobstep
+                  @job_name = N'$jobName',
+                  @step_id = 1,
+                  @step_name = N'Run SSIS Package From SSISDB',
+                  @subsystem = N'TSQL',
+                  @database_name = N'master',
+                  @command = N'$jobStepCommand',
+                  @on_success_action = 1,
+                  @on_fail_action = 2;
+
+              PRINT 'SQL Server Agent job step updated.';
+          END
+          ELSE
+          BEGIN
               EXEC dbo.sp_add_jobstep
                   @job_name = N'$jobName',
                   @step_name = N'Run SSIS Package From SSISDB',
@@ -219,14 +256,7 @@ jobs:
                   @on_success_action = 1,
                   @on_fail_action = 2;
 
-              EXEC dbo.sp_add_jobserver
-                  @job_name = N'$jobName';
-
-              PRINT 'SQL Server Agent job created.';
-          END
-          ELSE
-          BEGIN
-              PRINT 'SQL Server Agent job already exists. Job creation skipped.';
+              PRINT 'SQL Server Agent job step created.';
           END
 
           IF NOT EXISTS (
@@ -257,7 +287,7 @@ jobs:
                   @freq_subday_interval = 30,
                   @active_start_time = 000000;
 
-              PRINT 'Schedule already exists. Schedule updated to every 30 seconds.';
+              PRINT 'Schedule updated: every 30 seconds.';
           END
 
           IF NOT EXISTS (
@@ -287,4 +317,38 @@ jobs:
             -ServerInstance $env:SQL_SERVER `
             -Database "msdb" `
             -Query $sql `
+            -ErrorAction Stop
+
+      - name: Run SQL Server Agent Job
+        shell: powershell
+        run: |
+          $jobName = $env:SQL_AGENT_JOB.Replace("'", "''")
+
+          Invoke-Sqlcmd `
+            -ServerInstance $env:SQL_SERVER `
+            -Database "msdb" `
+            -Query "EXEC dbo.sp_start_job @job_name = N'$jobName';" `
+            -ErrorAction Stop
+
+          Write-Host "SQL Server Agent job started: $env:SQL_AGENT_JOB"
+
+      - name: Validate Job Started
+        shell: powershell
+        run: |
+          $jobName = $env:SQL_AGENT_JOB.Replace("'", "''")
+
+          Invoke-Sqlcmd `
+            -ServerInstance $env:SQL_SERVER `
+            -Database "msdb" `
+            -Query "
+            SELECT TOP 1
+                j.name AS JobName,
+                a.start_execution_date,
+                a.stop_execution_date
+            FROM dbo.sysjobs j
+            INNER JOIN dbo.sysjobactivity a
+                ON j.job_id = a.job_id
+            WHERE j.name = N'$jobName'
+            ORDER BY a.start_execution_date DESC;
+            " `
             -ErrorAction Stop
