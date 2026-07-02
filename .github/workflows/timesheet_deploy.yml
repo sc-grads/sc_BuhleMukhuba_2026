@@ -322,7 +322,7 @@ jobs:
             -Query $sql `
             -ErrorAction Stop
 
-      - name: Run SQL Server Agent Job
+      - name: Validate SQL Server Agent Job
         shell: powershell
         run: |
           $jobName = $env:SQL_AGENT_JOB.Replace("'", "''")
@@ -330,10 +330,38 @@ jobs:
           Invoke-Sqlcmd `
             -ServerInstance $env:SQL_SERVER `
             -Database "msdb" `
-            -Query "EXEC dbo.sp_start_job @job_name = N'$jobName';" `
+            -Query "
+            SELECT 
+                j.name AS JobName,
+                j.enabled AS JobEnabled,
+                s.name AS ScheduleName,
+                s.enabled AS ScheduleEnabled,
+                s.freq_subday_interval AS RunsEvery,
+                CASE s.freq_subday_type
+                    WHEN 2 THEN 'Seconds'
+                    WHEN 4 THEN 'Minutes'
+                    WHEN 8 THEN 'Hours'
+                    ELSE 'Other'
+                END AS IntervalType,
+                a.start_execution_date,
+                a.stop_execution_date,
+                CASE 
+                    WHEN a.start_execution_date IS NOT NULL 
+                     AND a.stop_execution_date IS NULL 
+                    THEN 'Running'
+                    ELSE 'Not currently running'
+                END AS CurrentStatus
+            FROM dbo.sysjobs j
+            LEFT JOIN dbo.sysjobschedules js
+                ON j.job_id = js.job_id
+            LEFT JOIN dbo.sysschedules s
+                ON js.schedule_id = s.schedule_id
+            LEFT JOIN dbo.sysjobactivity a
+                ON j.job_id = a.job_id
+            WHERE j.name = N'$jobName'
+            ORDER BY a.start_execution_date DESC;
+            " `
             -ErrorAction Stop
-
-          Write-Host "SQL Server Agent job started: $env:SQL_AGENT_JOB"
 
   deploy-to-shriya:
     name: Deploy to Shriya
@@ -351,6 +379,37 @@ jobs:
     steps:
       - name: Checkout Repo
         uses: actions/checkout@v4
+
+      - name: Ensure SqlServer PowerShell Module
+        shell: powershell
+        run: |
+          if (Get-Module -Name SQLPS) {
+              Remove-Module SQLPS -Force -ErrorAction SilentlyContinue
+          }
+
+          if (!(Get-Module -ListAvailable -Name SqlServer)) {
+              Write-Host "SqlServer module not found. Installing..."
+
+              Install-PackageProvider `
+                -Name NuGet `
+                -Force `
+                -Scope CurrentUser
+
+              Set-PSRepository `
+                -Name PSGallery `
+                -InstallationPolicy Trusted
+
+              Install-Module `
+                -Name SqlServer `
+                -Scope CurrentUser `
+                -Force `
+                -AllowClobber
+          }
+
+          Import-Module SqlServer -Force -DisableNameChecking
+
+          Write-Host "SqlServer module is ready."
+          Get-Command Invoke-Sqlcmd
 
       - name: Build SSIS Project Into ISPAC
         shell: powershell
@@ -442,6 +501,8 @@ jobs:
       - name: Create SSIS Folder If Missing
         shell: powershell
         run: |
+          Import-Module SqlServer -Force -DisableNameChecking
+
           $folder = $env:SSIS_FOLDER.Replace("'", "''")
 
           $sql = @"
@@ -509,6 +570,8 @@ jobs:
       - name: Create SQL Server Agent Job And Schedule
         shell: powershell
         run: |
+          Import-Module SqlServer -Force -DisableNameChecking
+
           $jobName = $env:SQL_AGENT_JOB.Replace("'", "''")
           $folder = $env:SSIS_FOLDER.Replace("'", "''")
           $project = $env:SSIS_PROJECT.Replace("'", "''")
@@ -654,15 +717,45 @@ jobs:
             -Query $sql `
             -ErrorAction Stop
 
-      - name: Run SQL Server Agent Job
+      - name: Validate SQL Server Agent Job
         shell: powershell
         run: |
+          Import-Module SqlServer -Force -DisableNameChecking
+
           $jobName = $env:SQL_AGENT_JOB.Replace("'", "''")
 
           Invoke-Sqlcmd `
             -ServerInstance $env:SQL_SERVER `
             -Database "msdb" `
-            -Query "EXEC dbo.sp_start_job @job_name = N'$jobName';" `
+            -Query "
+            SELECT 
+                j.name AS JobName,
+                j.enabled AS JobEnabled,
+                s.name AS ScheduleName,
+                s.enabled AS ScheduleEnabled,
+                s.freq_subday_interval AS RunsEvery,
+                CASE s.freq_subday_type
+                    WHEN 2 THEN 'Seconds'
+                    WHEN 4 THEN 'Minutes'
+                    WHEN 8 THEN 'Hours'
+                    ELSE 'Other'
+                END AS IntervalType,
+                a.start_execution_date,
+                a.stop_execution_date,
+                CASE 
+                    WHEN a.start_execution_date IS NOT NULL 
+                     AND a.stop_execution_date IS NULL 
+                    THEN 'Running'
+                    ELSE 'Not currently running'
+                END AS CurrentStatus
+            FROM dbo.sysjobs j
+            LEFT JOIN dbo.sysjobschedules js
+                ON j.job_id = js.job_id
+            LEFT JOIN dbo.sysschedules s
+                ON js.schedule_id = s.schedule_id
+            LEFT JOIN dbo.sysjobactivity a
+                ON j.job_id = a.job_id
+            WHERE j.name = N'$jobName'
+            ORDER BY a.start_execution_date DESC;
+            " `
             -ErrorAction Stop
-
-          Write-Host "SQL Server Agent job started: $env:SQL_AGENT_JOB"
