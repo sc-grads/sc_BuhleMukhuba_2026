@@ -193,6 +193,7 @@ jobs:
           $folder = $env:SSIS_FOLDER.Replace("'", "''")
           $project = $env:SSIS_PROJECT.Replace("'", "''")
           $package = $env:SSIS_PACKAGE.Replace("'", "''")
+          $scheduleName = "$jobName Every 30 Seconds"
 
           $jobStepCommand = @"
           DECLARE @execution_id BIGINT;
@@ -241,44 +242,63 @@ jobs:
           BEGIN
               PRINT 'SQL Server Agent job already exists. Job creation skipped.';
           END
+
+          IF NOT EXISTS (
+              SELECT 1
+              FROM dbo.sysschedules
+              WHERE name = N'$scheduleName'
+          )
+          BEGIN
+              EXEC dbo.sp_add_schedule
+                  @schedule_name = N'$scheduleName',
+                  @enabled = 1,
+                  @freq_type = 4,
+                  @freq_interval = 1,
+                  @freq_subday_type = 2,
+                  @freq_subday_interval = 30,
+                  @active_start_time = 000000;
+
+              PRINT 'Schedule created: every 30 seconds.';
+          END
+          ELSE
+          BEGIN
+              EXEC dbo.sp_update_schedule
+                  @name = N'$scheduleName',
+                  @enabled = 1,
+                  @freq_type = 4,
+                  @freq_interval = 1,
+                  @freq_subday_type = 2,
+                  @freq_subday_interval = 30,
+                  @active_start_time = 000000;
+
+              PRINT 'Schedule already exists. Schedule updated to every 30 seconds.';
+          END
+
+          IF NOT EXISTS (
+              SELECT 1
+              FROM dbo.sysjobs j
+              INNER JOIN dbo.sysjobschedules js
+                  ON j.job_id = js.job_id
+              INNER JOIN dbo.sysschedules s
+                  ON js.schedule_id = s.schedule_id
+              WHERE j.name = N'$jobName'
+                AND s.name = N'$scheduleName'
+          )
+          BEGIN
+              EXEC dbo.sp_attach_schedule
+                  @job_name = N'$jobName',
+                  @schedule_name = N'$scheduleName';
+
+              PRINT 'Schedule attached to job.';
+          END
+          ELSE
+          BEGIN
+              PRINT 'Schedule already attached to job.';
+          END
           "@
 
           Invoke-Sqlcmd `
             -ServerInstance $env:SQL_SERVER `
             -Database "msdb" `
             -Query $sql `
-            -ErrorAction Stop
-
-      - name: Run SQL Server Agent Job
-        shell: powershell
-        run: |
-          $jobName = $env:SQL_AGENT_JOB.Replace("'", "''")
-
-          Invoke-Sqlcmd `
-            -ServerInstance $env:SQL_SERVER `
-            -Database "msdb" `
-            -Query "EXEC dbo.sp_start_job @job_name = N'$jobName';" `
-            -ErrorAction Stop
-
-          Write-Host "SQL Server Agent job started: $env:SQL_AGENT_JOB"
-
-      - name: Validate Job Started
-        shell: powershell
-        run: |
-          $jobName = $env:SQL_AGENT_JOB.Replace("'", "''")
-
-          Invoke-Sqlcmd `
-            -ServerInstance $env:SQL_SERVER `
-            -Database "msdb" `
-            -Query "
-            SELECT TOP 1
-                j.name AS JobName,
-                a.start_execution_date,
-                a.stop_execution_date
-            FROM dbo.sysjobs j
-            INNER JOIN dbo.sysjobactivity a
-                ON j.job_id = a.job_id
-            WHERE j.name = N'$jobName'
-            ORDER BY a.start_execution_date DESC;
-            " `
             -ErrorAction Stop
