@@ -526,6 +526,7 @@ jobs:
           Invoke-Sqlcmd `
             -ServerInstance $env:SQL_SERVER `
             -Database "SSISDB" `
+            -TrustServerCertificate `
             -Query $sql `
             -ErrorAction Stop
 
@@ -714,6 +715,7 @@ jobs:
           Invoke-Sqlcmd `
             -ServerInstance $env:SQL_SERVER `
             -Database "msdb" `
+            -TrustServerCertificate `
             -Query $sql `
             -ErrorAction Stop
 
@@ -727,6 +729,7 @@ jobs:
           Invoke-Sqlcmd `
             -ServerInstance $env:SQL_SERVER `
             -Database "msdb" `
+            -TrustServerCertificate `
             -Query "
             SELECT 
                 j.name AS JobName,
