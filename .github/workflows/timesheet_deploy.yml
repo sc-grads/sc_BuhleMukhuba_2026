@@ -190,7 +190,7 @@ jobs:
           $folder = $env:SSIS_FOLDER.Replace("'", "''")
           $project = $env:SSIS_PROJECT.Replace("'", "''")
           $package = $env:SSIS_PACKAGE.Replace("'", "''")
-          $scheduleName = "$jobName Every 30 Seconds"
+          $scheduleName = "$jobName Every 90 Seconds"
 
           $jobStepCommand = @"
           DECLARE @execution_id BIGINT;
@@ -283,10 +283,10 @@ jobs:
                   @freq_type = 4,
                   @freq_interval = 1,
                   @freq_subday_type = 2,
-                  @freq_subday_interval = 30,
+                  @freq_subday_interval = 90,
                   @active_start_time = 000000;
 
-              PRINT 'Schedule created: every 30 seconds.';
+              PRINT 'Schedule created: every 90 seconds.';
           END
           ELSE
           BEGIN
@@ -296,10 +296,10 @@ jobs:
                   @freq_type = 4,
                   @freq_interval = 1,
                   @freq_subday_type = 2,
-                  @freq_subday_interval = 30,
+                  @freq_subday_interval = 90,
                   @active_start_time = 000000;
 
-              PRINT 'Schedule updated: every 30 seconds.';
+              PRINT 'Schedule updated: every 90 seconds.';
           END
 
           IF NOT EXISTS (
