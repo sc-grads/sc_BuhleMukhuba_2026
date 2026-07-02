@@ -138,39 +138,50 @@ jobs:
             -Query $sql `
             -ErrorAction Stop
 
-      - name: Deploy ISPAC to SSISDB
-        shell: powershell
-        run: |
+           - name: Deploy ISPAC to SSISDB
+             shell: powershell
+             run: |
           if (!(Test-Path $env:ISPAC_PATH)) {
               throw "ISPAC path is invalid: $env:ISPAC_PATH"
           }
 
-          $folder = $env:SSIS_FOLDER.Replace("'", "''")
-          $project = $env:SSIS_PROJECT.Replace("'", "''")
-          $ispacPath = $env:ISPAC_PATH.Replace("'", "''")
+          $folder = $env:SSIS_FOLDER
+          $project = $env:SSIS_PROJECT
+          $ispacPath = $env:ISPAC_PATH
 
-          $sql = @"
-          DECLARE @ProjectBinary VARBINARY(MAX);
+          Write-Host "Deploying ISPAC:"
+          Write-Host $ispacPath
 
-          SELECT @ProjectBinary = BulkColumn
-          FROM OPENROWSET(
-              BULK '$ispacPath',
-              SINGLE_BLOB
-          ) AS ProjectFile;
+          $projectBytes = [System.IO.File]::ReadAllBytes($ispacPath)
 
-          EXEC catalog.deploy_project
-              @folder_name = N'$folder',
-              @project_name = N'$project',
-              @project_stream = @ProjectBinary;
+          $connectionString = "Server=$env:SQL_SERVER;Database=SSISDB;Integrated Security=True;TrustServerCertificate=True;"
 
-          PRINT 'SSIS project deployed or redeployed successfully.';
-          "@
+          $connection = New-Object System.Data.SqlClient.SqlConnection
+          $connection.ConnectionString = $connectionString
+          $connection.Open()
 
-          Invoke-Sqlcmd `
-            -ServerInstance $env:SQL_SERVER `
-            -Database "SSISDB" `
-            -Query $sql `
-            -ErrorAction Stop
+          try {
+              $command = $connection.CreateCommand()
+              $command.CommandTimeout = 0
+
+              $command.CommandText = "
+              EXEC catalog.deploy_project
+                  @folder_name = @FolderName,
+                  @project_name = @ProjectName,
+                  @project_stream = @ProjectStream;
+              "
+
+              $command.Parameters.Add("@FolderName", [System.Data.SqlDbType]::NVarChar, 128).Value = $folder
+              $command.Parameters.Add("@ProjectName", [System.Data.SqlDbType]::NVarChar, 128).Value = $project
+              $command.Parameters.Add("@ProjectStream", [System.Data.SqlDbType]::VarBinary, -1).Value = $projectBytes
+
+              $command.ExecuteNonQuery()
+
+              Write-Host "SSIS project deployed or redeployed successfully."
+          }
+          finally {
+              $connection.Close()
+          }
 
       - name: Create SQL Server Agent Job And Schedule
         shell: powershell
