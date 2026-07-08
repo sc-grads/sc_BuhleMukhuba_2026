@@ -348,6 +348,7 @@ jobs:
                                   'Pending',
                                   'ISPAC uploaded from GitHub Actions.'
                               );
+                              GO
                               "@
                               
                                             $null = $command.Parameters.Add("@FolderName", [System.Data.SqlDbType]::NVarChar, 128)
@@ -414,6 +415,7 @@ jobs:
                                   ISNULL(DeploymentMessage, '') AS DeploymentMessage
                           FROM master.dbo.SSIS_Deploy_Staging
                           WHERE DeploymentID = $deploymentId;
+                          GO
                           "@
                           
                                         $result = sqlcmd `
