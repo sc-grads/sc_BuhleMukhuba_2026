@@ -78,24 +78,24 @@ jobs:
         shell: powershell
         run: |
           $sql = @"
-          USE master;
+USE master;
 
-          IF OBJECT_ID('dbo.SSISDeploymentQueue', 'U') IS NULL
-          BEGIN
-              CREATE TABLE dbo.SSISDeploymentQueue
-              (
-                  DeploymentID INT IDENTITY(1,1) PRIMARY KEY,
-                  FolderName SYSNAME NOT NULL,
-                  ProjectName SYSNAME NOT NULL,
-                  IspacFile VARBINARY(MAX) NOT NULL,
-                  RequestedBy SYSNAME NULL,
-                  RequestedDate DATETIME2 NOT NULL DEFAULT SYSUTCDATETIME(),
-                  DeploymentStatus VARCHAR(30) NOT NULL DEFAULT 'Pending',
-                  DeploymentMessage NVARCHAR(MAX) NULL,
-                  CompletedDate DATETIME2 NULL
-              );
-          END;
-          "@
+IF OBJECT_ID('dbo.SSISDeploymentQueue', 'U') IS NULL
+BEGIN
+    CREATE TABLE dbo.SSISDeploymentQueue
+    (
+        DeploymentID INT IDENTITY(1,1) PRIMARY KEY,
+        FolderName SYSNAME NOT NULL,
+        ProjectName SYSNAME NOT NULL,
+        IspacFile VARBINARY(MAX) NOT NULL,
+        RequestedBy SYSNAME NULL,
+        RequestedDate DATETIME2 NOT NULL DEFAULT SYSUTCDATETIME(),
+        DeploymentStatus VARCHAR(30) NOT NULL DEFAULT 'Pending',
+        DeploymentMessage NVARCHAR(MAX) NULL,
+        CompletedDate DATETIME2 NULL
+    );
+END;
+"@
 
           Invoke-Sqlcmd `
             -ServerInstance $env:SQL_SERVER `
@@ -128,26 +128,26 @@ jobs:
               $command.CommandTimeout = 0
 
               $command.CommandText = @"
-              INSERT INTO dbo.SSISDeploymentQueue
-              (
-                  FolderName,
-                  ProjectName,
-                  IspacFile,
-                  RequestedBy,
-                  DeploymentStatus,
-                  DeploymentMessage
-              )
-              OUTPUT INSERTED.DeploymentID
-              VALUES
-              (
-                  @FolderName,
-                  @ProjectName,
-                  @IspacFile,
-                  @RequestedBy,
-                  'Pending',
-                  'ISPAC uploaded from GitHub Actions.'
-              );
-              "@
+INSERT INTO dbo.SSISDeploymentQueue
+(
+    FolderName,
+    ProjectName,
+    IspacFile,
+    RequestedBy,
+    DeploymentStatus,
+    DeploymentMessage
+)
+OUTPUT INSERTED.DeploymentID
+VALUES
+(
+    @FolderName,
+    @ProjectName,
+    @IspacFile,
+    @RequestedBy,
+    'Pending',
+    'ISPAC uploaded from GitHub Actions.'
+);
+"@
 
               $null = $command.Parameters.Add("@FolderName", [System.Data.SqlDbType]::NVarChar, 128)
               $command.Parameters["@FolderName"].Value = $env:SSIS_FOLDER
@@ -187,6 +187,7 @@ jobs:
           $ErrorActionPreference = "Stop"
 
           $deployFolder = "C:\SSISDeploy"
+          $deploymentId = $null
 
           if (!(Test-Path $deployFolder)) {
               New-Item -ItemType Directory -Path $deployFolder -Force | Out-Null
@@ -202,16 +203,7 @@ jobs:
               $command = $connection.CreateCommand()
               $command.CommandTimeout = 0
 
-              $command.CommandText = @"
-              SELECT TOP 1
-                  DeploymentID,
-                  FolderName,
-                  ProjectName,
-                  IspacFile
-              FROM dbo.SSISDeploymentQueue
-              WHERE DeploymentStatus = 'Pending'
-              ORDER BY DeploymentID DESC;
-          "@
+              $command.CommandText = "SELECT TOP 1 DeploymentID, FolderName, ProjectName, IspacFile FROM dbo.SSISDeploymentQueue WHERE DeploymentStatus = 'Pending' ORDER BY DeploymentID DESC;"
 
               $reader = $command.ExecuteReader()
 
@@ -232,29 +224,14 @@ jobs:
               [System.IO.File]::WriteAllBytes($ispacPath, $ispacBytes)
 
               $updateCommand = $connection.CreateCommand()
-              $updateCommand.CommandText = @"
-              UPDATE dbo.SSISDeploymentQueue
-              SET 
-                  DeploymentStatus = 'Running',
-                  DeploymentMessage = 'SQL Agent started local SSIS deployment.'
-              WHERE DeploymentID = @DeploymentID;
-          "@
+              $updateCommand.CommandText = "UPDATE dbo.SSISDeploymentQueue SET DeploymentStatus = 'Running', DeploymentMessage = 'SQL Agent started local SSIS deployment.' WHERE DeploymentID = @DeploymentID;"
 
               $null = $updateCommand.Parameters.Add("@DeploymentID", [System.Data.SqlDbType]::Int)
               $updateCommand.Parameters["@DeploymentID"].Value = $deploymentId
               $updateCommand.ExecuteNonQuery() | Out-Null
 
               $folderCheck = $connection.CreateCommand()
-              $folderCheck.CommandText = @"
-              IF NOT EXISTS (
-                  SELECT 1
-                  FROM SSISDB.catalog.folders
-                  WHERE name = @FolderName
-              )
-              BEGIN
-                  THROW 50001, 'SSISDB folder does not exist.', 1;
-              END;
-          "@
+              $folderCheck.CommandText = "IF NOT EXISTS (SELECT 1 FROM SSISDB.catalog.folders WHERE name = @FolderName) BEGIN THROW 50001, 'SSISDB folder does not exist.', 1; END;"
 
               $null = $folderCheck.Parameters.Add("@FolderName", [System.Data.SqlDbType]::NVarChar, 128)
               $folderCheck.Parameters["@FolderName"].Value = $folderName
@@ -303,14 +280,7 @@ jobs:
               }
 
               $successCommand = $connection.CreateCommand()
-              $successCommand.CommandText = @"
-              UPDATE dbo.SSISDeploymentQueue
-              SET 
-                  DeploymentStatus = 'Succeeded',
-                  DeploymentMessage = 'SSIS project deployed successfully by SQL Agent.',
-                  CompletedDate = SYSUTCDATETIME()
-              WHERE DeploymentID = @DeploymentID;
-          "@
+              $successCommand.CommandText = "UPDATE dbo.SSISDeploymentQueue SET DeploymentStatus = 'Succeeded', DeploymentMessage = 'SSIS project deployed successfully by SQL Agent.', CompletedDate = SYSUTCDATETIME() WHERE DeploymentID = @DeploymentID;"
 
               $null = $successCommand.Parameters.Add("@DeploymentID", [System.Data.SqlDbType]::Int)
               $successCommand.Parameters["@DeploymentID"].Value = $deploymentId
@@ -323,14 +293,7 @@ jobs:
 
               if ($connection.State -eq "Open" -and $deploymentId) {
                   $failCommand = $connection.CreateCommand()
-                  $failCommand.CommandText = @"
-              UPDATE dbo.SSISDeploymentQueue
-              SET 
-                  DeploymentStatus = 'Failed',
-                  DeploymentMessage = @DeploymentMessage,
-                  CompletedDate = SYSUTCDATETIME()
-              WHERE DeploymentID = @DeploymentID;
-          "@
+                  $failCommand.CommandText = "UPDATE dbo.SSISDeploymentQueue SET DeploymentStatus = 'Failed', DeploymentMessage = @DeploymentMessage, CompletedDate = SYSUTCDATETIME() WHERE DeploymentID = @DeploymentID;"
 
                   $null = $failCommand.Parameters.Add("@DeploymentID", [System.Data.SqlDbType]::Int)
                   $failCommand.Parameters["@DeploymentID"].Value = $deploymentId
@@ -358,66 +321,66 @@ jobs:
           $jobCommandSql = $jobCommand.Replace("'", "''")
 
           $sql = @"
-          USE msdb;
+USE msdb;
 
-          IF NOT EXISTS (
-              SELECT 1
-              FROM dbo.sysjobs
-              WHERE name = N'$jobNameSql'
-          )
-          BEGIN
-              EXEC dbo.sp_add_job
-                  @job_name = N'$jobNameSql',
-                  @enabled = 1,
-                  @description = N'Deploys the latest ISPAC uploaded from GitHub Actions.';
+IF NOT EXISTS (
+    SELECT 1
+    FROM dbo.sysjobs
+    WHERE name = N'$jobNameSql'
+)
+BEGIN
+    EXEC dbo.sp_add_job
+        @job_name = N'$jobNameSql',
+        @enabled = 1,
+        @description = N'Deploys the latest ISPAC uploaded from GitHub Actions.';
 
-              EXEC dbo.sp_add_jobserver
-                  @job_name = N'$jobNameSql';
+    EXEC dbo.sp_add_jobserver
+        @job_name = N'$jobNameSql';
 
-              PRINT 'SQL Agent deployment job created.';
-          END
-          ELSE
-          BEGIN
-              EXEC dbo.sp_update_job
-                  @job_name = N'$jobNameSql',
-                  @enabled = 1;
+    PRINT 'SQL Agent deployment job created.';
+END
+ELSE
+BEGIN
+    EXEC dbo.sp_update_job
+        @job_name = N'$jobNameSql',
+        @enabled = 1;
 
-              PRINT 'SQL Agent deployment job already exists.';
-          END;
+    PRINT 'SQL Agent deployment job already exists.';
+END;
 
-          IF EXISTS (
-              SELECT 1
-              FROM dbo.sysjobsteps js
-              INNER JOIN dbo.sysjobs j
-                  ON js.job_id = j.job_id
-              WHERE j.name = N'$jobNameSql'
-                AND js.step_id = 1
-          )
-          BEGIN
-              EXEC dbo.sp_update_jobstep
-                  @job_name = N'$jobNameSql',
-                  @step_id = 1,
-                  @step_name = N'Deploy ISPAC Locally',
-                  @subsystem = N'CmdExec',
-                  @command = N'$jobCommandSql',
-                  @on_success_action = 1,
-                  @on_fail_action = 2;
+IF EXISTS (
+    SELECT 1
+    FROM dbo.sysjobsteps js
+    INNER JOIN dbo.sysjobs j
+        ON js.job_id = j.job_id
+    WHERE j.name = N'$jobNameSql'
+      AND js.step_id = 1
+)
+BEGIN
+    EXEC dbo.sp_update_jobstep
+        @job_name = N'$jobNameSql',
+        @step_id = 1,
+        @step_name = N'Deploy ISPAC Locally',
+        @subsystem = N'CmdExec',
+        @command = N'$jobCommandSql',
+        @on_success_action = 1,
+        @on_fail_action = 2;
 
-              PRINT 'SQL Agent deployment job step updated.';
-          END
-          ELSE
-          BEGIN
-              EXEC dbo.sp_add_jobstep
-                  @job_name = N'$jobNameSql',
-                  @step_name = N'Deploy ISPAC Locally',
-                  @subsystem = N'CmdExec',
-                  @command = N'$jobCommandSql',
-                  @on_success_action = 1,
-                  @on_fail_action = 2;
+    PRINT 'SQL Agent deployment job step updated.';
+END
+ELSE
+BEGIN
+    EXEC dbo.sp_add_jobstep
+        @job_name = N'$jobNameSql',
+        @step_name = N'Deploy ISPAC Locally',
+        @subsystem = N'CmdExec',
+        @command = N'$jobCommandSql',
+        @on_success_action = 1,
+        @on_fail_action = 2;
 
-              PRINT 'SQL Agent deployment job step created.';
-          END;
-          "@
+    PRINT 'SQL Agent deployment job step created.';
+END;
+"@
 
           Invoke-Sqlcmd `
             -ServerInstance $env:SQL_SERVER `
@@ -434,9 +397,9 @@ jobs:
           $jobName = $env:SQL_AGENT_DEPLOY_JOB.Replace("'", "''")
 
           $sql = @"
-          EXEC msdb.dbo.sp_start_job
-              @job_name = N'$jobName';
-          "@
+EXEC msdb.dbo.sp_start_job
+    @job_name = N'$jobName';
+"@
 
           Invoke-Sqlcmd `
             -ServerInstance $env:SQL_SERVER `
@@ -460,12 +423,12 @@ jobs:
               Write-Host "Checking deployment status. Attempt $attempt of $maxAttempts..."
 
               $sql = @"
-              SELECT 
-                  DeploymentStatus,
-                  DeploymentMessage
-              FROM master.dbo.SSISDeploymentQueue
-              WHERE DeploymentID = $deploymentId;
-              "@
+SELECT 
+    DeploymentStatus,
+    DeploymentMessage
+FROM master.dbo.SSISDeploymentQueue
+WHERE DeploymentID = $deploymentId;
+"@
 
               $result = Invoke-Sqlcmd `
                 -ServerInstance $env:SQL_SERVER `
@@ -507,17 +470,17 @@ jobs:
           $project = $env:SSIS_PROJECT.Replace("'", "''")
 
           $sql = @"
-          SELECT 
-              f.name AS FolderName,
-              p.name AS ProjectName,
-              p.created_time,
-              p.last_deployed_time
-          FROM SSISDB.catalog.projects p
-          INNER JOIN SSISDB.catalog.folders f
-              ON p.folder_id = f.folder_id
-          WHERE f.name = N'$folder'
-            AND p.name = N'$project';
-          "@
+SELECT 
+    f.name AS FolderName,
+    p.name AS ProjectName,
+    p.created_time,
+    p.last_deployed_time
+FROM SSISDB.catalog.projects p
+INNER JOIN SSISDB.catalog.folders f
+    ON p.folder_id = f.folder_id
+WHERE f.name = N'$folder'
+  AND p.name = N'$project';
+"@
 
           Invoke-Sqlcmd `
             -ServerInstance $env:SQL_SERVER `
