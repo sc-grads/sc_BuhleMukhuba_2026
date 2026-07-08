@@ -1,15 +1,12 @@
 name: Automation SSIS DEPLOY
 
 on:
-  push:
-    branches: [ main ]
-  pull_request:
-    branches: [ main ]
+
   workflow_dispatch:
 
 jobs:
   deploy-sambe:
-    name: deploy-Shriya / deploy
+    name: deploy
     runs-on: windows-latest
 
     environment:
