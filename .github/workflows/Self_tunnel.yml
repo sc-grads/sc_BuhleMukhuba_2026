@@ -1,0 +1,367 @@
+name: Timesheet Migration Tunnel Deployment
+
+on:
+  workflow_dispatch:
+
+jobs:
+  deploy-through-tunnel:
+    name: Deploy Through Tunnel
+    runs-on: windows-latest
+    environment: production
+
+    env:
+      SQL_SERVER: ${{ secrets.tunnel_url }}
+      SQL_USERNAME: ${{ secrets.sql_username }}
+      SQL_PASSWORD: ${{ secrets.sql_password }}
+
+      SSIS_FOLDER: Migration
+      SSIS_PROJECT: Timesheet_migration
+      SQL_AGENT_JOB: Timesheet_Migration
+
+    steps:
+      - name: Checkout Repo
+        uses: actions/checkout@v4
+
+      - name: Validate Production Secrets
+        shell: powershell
+        run: |
+          if ([string]::IsNullOrWhiteSpace($env:SQL_SERVER)) {
+              throw "Missing production secret: tunnel_url"
+          }
+
+          if ([string]::IsNullOrWhiteSpace($env:SQL_USERNAME)) {
+              throw "Missing production secret: sql_username"
+          }
+
+          if ([string]::IsNullOrWhiteSpace($env:SQL_PASSWORD)) {
+              throw "Missing production secret: sql_password"
+          }
+
+          Write-Host "Production secrets found."
+
+      - name: Find ISPAC File
+        shell: powershell
+        run: |
+          $ispac = Get-ChildItem `
+            -Path "." `
+            -Recurse `
+            -Filter "*.ispac" |
+            Sort-Object LastWriteTime -Descending |
+            Select-Object -First 1
+
+          if (!$ispac) {
+              throw "No ISPAC file found in the repository. Commit your .ispac file before running this workflow."
+          }
+
+          Write-Host "ISPAC found:"
+          Write-Host $ispac.FullName
+
+          "ISPAC_PATH=$($ispac.FullName)" | Out-File `
+            -FilePath $env:GITHUB_ENV `
+            -Append
+
+      - name: Find DTSX Package Name
+        shell: powershell
+        run: |
+          $package = Get-ChildItem `
+            -Path "." `
+            -Recurse `
+            -Filter "*.dtsx" |
+            Sort-Object LastWriteTime -Descending |
+            Select-Object -First 1
+
+          if (!$package) {
+              throw "No DTSX package found in the repository."
+          }
+
+          Write-Host "Package found:"
+          Write-Host $package.Name
+
+          "SSIS_PACKAGE=$($package.Name)" | Out-File `
+            -FilePath $env:GITHUB_ENV `
+            -Append
+
+      - name: Test SQL Tunnel Connection
+        shell: powershell
+        run: |
+          Write-Host "Testing SQL Server tunnel connection..."
+
+          Invoke-Sqlcmd `
+            -ServerInstance $env:SQL_SERVER `
+            -Database "master" `
+            -Username $env:SQL_USERNAME `
+            -Password $env:SQL_PASSWORD `
+            -TrustServerCertificate `
+            -Query "SELECT @@SERVERNAME AS ServerName, DB_NAME() AS CurrentDatabase;" `
+            -ErrorAction Stop
+
+          Write-Host "SQL Server tunnel connection successful."
+
+      - name: Create SSIS Folder If Missing
+        shell: powershell
+        run: |
+          $folder = $env:SSIS_FOLDER.Replace("'", "''")
+
+          $sql = @"
+          IF NOT EXISTS (
+              SELECT 1
+              FROM SSISDB.catalog.folders
+              WHERE name = N'$folder'
+          )
+          BEGIN
+              EXEC SSISDB.catalog.create_folder
+                  @folder_name = N'$folder';
+
+              PRINT 'SSIS folder created.';
+          END
+          ELSE
+          BEGIN
+              PRINT 'SSIS folder already exists.';
+          END
+          "@
+
+          Invoke-Sqlcmd `
+            -ServerInstance $env:SQL_SERVER `
+            -Database "master" `
+            -Username $env:SQL_USERNAME `
+            -Password $env:SQL_PASSWORD `
+            -TrustServerCertificate `
+            -Query $sql `
+            -ErrorAction Stop
+
+      - name: Deploy ISPAC to SSISDB
+        shell: powershell
+        run: |
+          if (!(Test-Path $env:ISPAC_PATH)) {
+              throw "ISPAC path is invalid: $env:ISPAC_PATH"
+          }
+
+          $projectBytes = [System.IO.File]::ReadAllBytes($env:ISPAC_PATH)
+
+          $connectionString = "Server=$env:SQL_SERVER;Database=master;User ID=$env:SQL_USERNAME;Password=$env:SQL_PASSWORD;Encrypt=True;TrustServerCertificate=True;"
+
+          $connection = New-Object System.Data.SqlClient.SqlConnection
+          $connection.ConnectionString = $connectionString
+          $connection.Open()
+
+          try {
+              $command = $connection.CreateCommand()
+              $command.CommandTimeout = 0
+
+              $command.CommandText = "
+              EXEC SSISDB.catalog.deploy_project
+                  @folder_name = @FolderName,
+                  @project_name = @ProjectName,
+                  @project_stream = @ProjectStream;
+              "
+
+              $command.Parameters.Add("@FolderName", [System.Data.SqlDbType]::NVarChar, 128).Value = $env:SSIS_FOLDER
+              $command.Parameters.Add("@ProjectName", [System.Data.SqlDbType]::NVarChar, 128).Value = $env:SSIS_PROJECT
+              $command.Parameters.Add("@ProjectStream", [System.Data.SqlDbType]::VarBinary, -1).Value = $projectBytes
+
+              $command.ExecuteNonQuery()
+
+              Write-Host "SSIS project deployed successfully through tunnel."
+          }
+          finally {
+              $connection.Close()
+          }
+
+      - name: Create SQL Server Agent Job And Schedule
+        shell: powershell
+        run: |
+          $jobName = $env:SQL_AGENT_JOB.Replace("'", "''")
+          $folder = $env:SSIS_FOLDER.Replace("'", "''")
+          $project = $env:SSIS_PROJECT.Replace("'", "''")
+          $package = $env:SSIS_PACKAGE.Replace("'", "''")
+          $scheduleName = "$jobName Every 90 Seconds"
+          $scheduleNameSql = $scheduleName.Replace("'", "''")
+
+          $jobStepCommand = @"
+          DECLARE @execution_id BIGINT;
+
+          EXEC SSISDB.catalog.create_execution
+              @folder_name = N'$folder',
+              @project_name = N'$project',
+              @package_name = N'$package',
+              @execution_id = @execution_id OUTPUT;
+
+          EXEC SSISDB.catalog.start_execution
+              @execution_id = @execution_id;
+          "@
+
+          $jobStepCommand = $jobStepCommand.Replace("'", "''")
+
+          $sql = @"
+          USE msdb;
+
+          IF NOT EXISTS (
+              SELECT 1
+              FROM dbo.sysjobs
+              WHERE name = N'$jobName'
+          )
+          BEGIN
+              EXEC dbo.sp_add_job
+                  @job_name = N'$jobName',
+                  @enabled = 1,
+                  @description = N'Runs the Timesheet SSIS package from SSISDB.';
+
+              EXEC dbo.sp_add_jobserver
+                  @job_name = N'$jobName';
+
+              PRINT 'SQL Server Agent job created.';
+          END
+          ELSE
+          BEGIN
+              EXEC dbo.sp_update_job
+                  @job_name = N'$jobName',
+                  @enabled = 1;
+
+              PRINT 'SQL Server Agent job already exists. Job enabled.';
+          END
+
+          IF EXISTS (
+              SELECT 1
+              FROM dbo.sysjobsteps js
+              INNER JOIN dbo.sysjobs j
+                  ON js.job_id = j.job_id
+              WHERE j.name = N'$jobName'
+                AND js.step_id = 1
+          )
+          BEGIN
+              EXEC dbo.sp_update_jobstep
+                  @job_name = N'$jobName',
+                  @step_id = 1,
+                  @step_name = N'Run SSIS Package From SSISDB',
+                  @subsystem = N'TSQL',
+                  @database_name = N'master',
+                  @command = N'$jobStepCommand',
+                  @on_success_action = 1,
+                  @on_fail_action = 2;
+
+              PRINT 'SQL Server Agent job step updated.';
+          END
+          ELSE
+          BEGIN
+              EXEC dbo.sp_add_jobstep
+                  @job_name = N'$jobName',
+                  @step_name = N'Run SSIS Package From SSISDB',
+                  @subsystem = N'TSQL',
+                  @database_name = N'master',
+                  @command = N'$jobStepCommand',
+                  @on_success_action = 1,
+                  @on_fail_action = 2;
+
+              PRINT 'SQL Server Agent job step created.';
+          END
+
+          IF NOT EXISTS (
+              SELECT 1
+              FROM dbo.sysschedules
+              WHERE name = N'$scheduleNameSql'
+          )
+          BEGIN
+              EXEC dbo.sp_add_schedule
+                  @schedule_name = N'$scheduleNameSql',
+                  @enabled = 1,
+                  @freq_type = 4,
+                  @freq_interval = 1,
+                  @freq_subday_type = 2,
+                  @freq_subday_interval = 90,
+                  @active_start_time = 000000;
+
+              PRINT 'Schedule created: every 90 seconds.';
+          END
+          ELSE
+          BEGIN
+              EXEC dbo.sp_update_schedule
+                  @name = N'$scheduleNameSql',
+                  @enabled = 1,
+                  @freq_type = 4,
+                  @freq_interval = 1,
+                  @freq_subday_type = 2,
+                  @freq_subday_interval = 90,
+                  @active_start_time = 000000;
+
+              PRINT 'Schedule updated: every 90 seconds.';
+          END
+
+          IF NOT EXISTS (
+              SELECT 1
+              FROM dbo.sysjobs j
+              INNER JOIN dbo.sysjobschedules js
+                  ON j.job_id = js.job_id
+              INNER JOIN dbo.sysschedules s
+                  ON js.schedule_id = s.schedule_id
+              WHERE j.name = N'$jobName'
+                AND s.name = N'$scheduleNameSql'
+          )
+          BEGIN
+              EXEC dbo.sp_attach_schedule
+                  @job_name = N'$jobName',
+                  @schedule_name = N'$scheduleNameSql';
+
+              PRINT 'Schedule attached to job.';
+          END
+          ELSE
+          BEGIN
+              PRINT 'Schedule already attached to job.';
+          END
+          "@
+
+          Invoke-Sqlcmd `
+            -ServerInstance $env:SQL_SERVER `
+            -Database "master" `
+            -Username $env:SQL_USERNAME `
+            -Password $env:SQL_PASSWORD `
+            -TrustServerCertificate `
+            -Query $sql `
+            -ErrorAction Stop
+
+      - name: Validate SQL Server Agent Job
+        shell: powershell
+        run: |
+          $jobName = $env:SQL_AGENT_JOB.Replace("'", "''")
+
+          $sql = @"
+          USE msdb;
+
+          SELECT TOP 10
+              j.name AS JobName,
+              j.enabled AS JobEnabled,
+              s.name AS ScheduleName,
+              s.enabled AS ScheduleEnabled,
+              s.freq_subday_interval AS RunsEvery,
+              CASE s.freq_subday_type
+                  WHEN 2 THEN 'Seconds'
+                  WHEN 4 THEN 'Minutes'
+                  WHEN 8 THEN 'Hours'
+                  ELSE 'Other'
+              END AS IntervalType,
+              a.start_execution_date,
+              a.stop_execution_date,
+              CASE 
+                  WHEN a.start_execution_date IS NOT NULL 
+                   AND a.stop_execution_date IS NULL 
+                  THEN 'Running'
+                  ELSE 'Not currently running'
+              END AS CurrentStatus
+          FROM dbo.sysjobs j
+          LEFT JOIN dbo.sysjobschedules js
+              ON j.job_id = js.job_id
+          LEFT JOIN dbo.sysschedules s
+              ON js.schedule_id = s.schedule_id
+          LEFT JOIN dbo.sysjobactivity a
+              ON j.job_id = a.job_id
+          WHERE j.name = N'$jobName'
+          ORDER BY a.start_execution_date DESC;
+          "@
+
+          Invoke-Sqlcmd `
+            -ServerInstance $env:SQL_SERVER `
+            -Database "master" `
+            -Username $env:SQL_USERNAME `
+            -Password $env:SQL_PASSWORD `
+            -TrustServerCertificate `
+            -Query $sql `
+            -ErrorAction Stop
