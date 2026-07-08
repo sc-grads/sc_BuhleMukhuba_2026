@@ -138,97 +138,97 @@ jobs:
           $scriptPath = "${{ github.workspace }}\create_deployment_objects.sql"
 
           $sql = @"
-USE master;
-GO
-
-IF OBJECT_ID('dbo.SSIS_Deploy_Staging', 'U') IS NULL
-BEGIN
-    CREATE TABLE dbo.SSIS_Deploy_Staging
-    (
-        DeploymentID INT IDENTITY(1,1) PRIMARY KEY,
-        FolderName SYSNAME NOT NULL,
-        ProjectName SYSNAME NOT NULL,
-        IspacFile VARBINARY(MAX) NOT NULL,
-        RequestedBy SYSNAME NULL,
-        RequestedDate DATETIME2 NOT NULL DEFAULT SYSUTCDATETIME(),
-        DeploymentStatus VARCHAR(30) NOT NULL DEFAULT 'Pending',
-        DeploymentMessage NVARCHAR(MAX) NULL,
-        CompletedDate DATETIME2 NULL
-    );
-END;
-GO
-
-CREATE OR ALTER PROCEDURE dbo.usp_DeployLatestSSISFromStaging
-AS
-BEGIN
-    SET NOCOUNT ON;
-
-    DECLARE
-        @DeploymentID INT,
-        @FolderName SYSNAME,
-        @ProjectName SYSNAME,
-        @ProjectStream VARBINARY(MAX),
-        @Message NVARCHAR(MAX);
-
-    SELECT TOP 1
-        @DeploymentID = DeploymentID,
-        @FolderName = FolderName,
-        @ProjectName = ProjectName,
-        @ProjectStream = IspacFile
-    FROM master.dbo.SSIS_Deploy_Staging
-    WHERE DeploymentStatus = 'Pending'
-    ORDER BY DeploymentID DESC;
-
-    IF @DeploymentID IS NULL
-    BEGIN
-        PRINT 'No pending SSIS deployment found.';
-        RETURN;
-    END;
-
-    BEGIN TRY
-        UPDATE master.dbo.SSIS_Deploy_Staging
-        SET
-            DeploymentStatus = 'Running',
-            DeploymentMessage = 'Deployment started locally by SQL Server Agent.'
-        WHERE DeploymentID = @DeploymentID;
-
-        IF NOT EXISTS (
-            SELECT 1
-            FROM SSISDB.catalog.folders
-            WHERE name = @FolderName
-        )
-        BEGIN
-            EXEC SSISDB.catalog.create_folder
-                @folder_name = @FolderName;
-        END;
-
-        EXEC SSISDB.catalog.deploy_project
-            @folder_name = @FolderName,
-            @project_name = @ProjectName,
-            @project_stream = @ProjectStream;
-
-        UPDATE master.dbo.SSIS_Deploy_Staging
-        SET
-            DeploymentStatus = 'Succeeded',
-            DeploymentMessage = 'SSIS project deployed successfully by local SQL Server Agent Windows context.',
-            CompletedDate = SYSUTCDATETIME()
-        WHERE DeploymentID = @DeploymentID;
-    END TRY
-    BEGIN CATCH
-        SET @Message = ERROR_MESSAGE();
-
-        UPDATE master.dbo.SSIS_Deploy_Staging
-        SET
-            DeploymentStatus = 'Failed',
-            DeploymentMessage = @Message,
-            CompletedDate = SYSUTCDATETIME()
-        WHERE DeploymentID = @DeploymentID;
-
-        THROW;
-    END CATCH;
-END;
-GO
-"@
+            USE master;
+            GO
+            
+            IF OBJECT_ID('dbo.SSIS_Deploy_Staging', 'U') IS NULL
+            BEGIN
+                CREATE TABLE dbo.SSIS_Deploy_Staging
+                (
+                    DeploymentID INT IDENTITY(1,1) PRIMARY KEY,
+                    FolderName SYSNAME NOT NULL,
+                    ProjectName SYSNAME NOT NULL,
+                    IspacFile VARBINARY(MAX) NOT NULL,
+                    RequestedBy SYSNAME NULL,
+                    RequestedDate DATETIME2 NOT NULL DEFAULT SYSUTCDATETIME(),
+                    DeploymentStatus VARCHAR(30) NOT NULL DEFAULT 'Pending',
+                    DeploymentMessage NVARCHAR(MAX) NULL,
+                    CompletedDate DATETIME2 NULL
+                );
+            END;
+            GO
+            
+            CREATE OR ALTER PROCEDURE dbo.usp_DeployLatestSSISFromStaging
+            AS
+            BEGIN
+                SET NOCOUNT ON;
+            
+                DECLARE
+                    @DeploymentID INT,
+                    @FolderName SYSNAME,
+                    @ProjectName SYSNAME,
+                    @ProjectStream VARBINARY(MAX),
+                    @Message NVARCHAR(MAX);
+            
+                SELECT TOP 1
+                    @DeploymentID = DeploymentID,
+                    @FolderName = FolderName,
+                    @ProjectName = ProjectName,
+                    @ProjectStream = IspacFile
+                FROM master.dbo.SSIS_Deploy_Staging
+                WHERE DeploymentStatus = 'Pending'
+                ORDER BY DeploymentID DESC;
+            
+                IF @DeploymentID IS NULL
+                BEGIN
+                    PRINT 'No pending SSIS deployment found.';
+                    RETURN;
+                END;
+            
+                BEGIN TRY
+                    UPDATE master.dbo.SSIS_Deploy_Staging
+                    SET
+                        DeploymentStatus = 'Running',
+                        DeploymentMessage = 'Deployment started locally by SQL Server Agent.'
+                    WHERE DeploymentID = @DeploymentID;
+            
+                    IF NOT EXISTS (
+                        SELECT 1
+                        FROM SSISDB.catalog.folders
+                        WHERE name = @FolderName
+                    )
+                    BEGIN
+                        EXEC SSISDB.catalog.create_folder
+                            @folder_name = @FolderName;
+                    END;
+            
+                    EXEC SSISDB.catalog.deploy_project
+                        @folder_name = @FolderName,
+                        @project_name = @ProjectName,
+                        @project_stream = @ProjectStream;
+            
+                    UPDATE master.dbo.SSIS_Deploy_Staging
+                    SET
+                        DeploymentStatus = 'Succeeded',
+                        DeploymentMessage = 'SSIS project deployed successfully by local SQL Server Agent Windows context.',
+                        CompletedDate = SYSUTCDATETIME()
+                    WHERE DeploymentID = @DeploymentID;
+                END TRY
+                BEGIN CATCH
+                    SET @Message = ERROR_MESSAGE();
+            
+                    UPDATE master.dbo.SSIS_Deploy_Staging
+                    SET
+                        DeploymentStatus = 'Failed',
+                        DeploymentMessage = @Message,
+                        CompletedDate = SYSUTCDATETIME()
+                    WHERE DeploymentID = @DeploymentID;
+            
+                    THROW;
+                END CATCH;
+            END;
+            GO
+            "@
 
           Set-Content -Path $scriptPath -Value $sql -Encoding UTF8
 
@@ -253,42 +253,42 @@ GO
           $jobCommandSql = $jobCommand.Replace("'", "''")
 
           $sql = @"
-USE msdb;
-GO
-
-IF EXISTS (
-    SELECT 1
-    FROM dbo.sysjobs
-    WHERE name = N'$jobName'
-)
-BEGIN
-    EXEC dbo.sp_delete_job
-        @job_name = N'$jobName',
-        @delete_unused_schedule = 1;
-END;
-GO
-
-EXEC dbo.sp_add_job
-    @job_name = N'$jobName',
-    @enabled = 1,
-    @description = N'Deploys latest SSIS ISPAC uploaded from GitHub Actions.';
-GO
-
-EXEC dbo.sp_add_jobstep
-    @job_name = N'$jobName',
-    @step_name = N'Deploy ISPAC Locally With Windows Authentication',
-    @step_id = 1,
-    @subsystem = N'CmdExec',
-    @command = N'$jobCommandSql',
-    @on_success_action = 1,
-    @on_fail_action = 2;
-GO
-
-EXEC dbo.sp_add_jobserver
-    @job_name = N'$jobName',
-    @server_name = N'(local)';
-GO
-"@
+            USE msdb;
+            GO
+            
+            IF EXISTS (
+                SELECT 1
+                FROM dbo.sysjobs
+                WHERE name = N'$jobName'
+            )
+            BEGIN
+                EXEC dbo.sp_delete_job
+                    @job_name = N'$jobName',
+                    @delete_unused_schedule = 1;
+            END;
+            GO
+            
+            EXEC dbo.sp_add_job
+                @job_name = N'$jobName',
+                @enabled = 1,
+                @description = N'Deploys latest SSIS ISPAC uploaded from GitHub Actions.';
+            GO
+            
+            EXEC dbo.sp_add_jobstep
+                @job_name = N'$jobName',
+                @step_name = N'Deploy ISPAC Locally With Windows Authentication',
+                @step_id = 1,
+                @subsystem = N'CmdExec',
+                @command = N'$jobCommandSql',
+                @on_success_action = 1,
+                @on_fail_action = 2;
+            GO
+            
+            EXEC dbo.sp_add_jobserver
+                @job_name = N'$jobName',
+                @server_name = N'(local)';
+            GO
+            "@
 
           Set-Content -Path $scriptPath -Value $sql -Encoding UTF8
 
@@ -323,26 +323,26 @@ GO
               $command.CommandTimeout = 0
 
               $command.CommandText = @"
-INSERT INTO dbo.SSIS_Deploy_Staging
-(
-    FolderName,
-    ProjectName,
-    IspacFile,
-    RequestedBy,
-    DeploymentStatus,
-    DeploymentMessage
-)
-OUTPUT INSERTED.DeploymentID
-VALUES
-(
-    @FolderName,
-    @ProjectName,
-    @IspacFile,
-    @RequestedBy,
-    'Pending',
-    'ISPAC uploaded from GitHub Actions.'
-);
-"@
+            INSERT INTO dbo.SSIS_Deploy_Staging
+            (
+                FolderName,
+                ProjectName,
+                IspacFile,
+                RequestedBy,
+                DeploymentStatus,
+                DeploymentMessage
+            )
+            OUTPUT INSERTED.DeploymentID
+            VALUES
+            (
+                @FolderName,
+                @ProjectName,
+                @IspacFile,
+                @RequestedBy,
+                'Pending',
+                'ISPAC uploaded from GitHub Actions.'
+            );
+            "@
 
               $null = $command.Parameters.Add("@FolderName", [System.Data.SqlDbType]::NVarChar, 128)
               $command.Parameters["@FolderName"].Value = $env:SSIS_FOLDER
@@ -399,14 +399,14 @@ VALUES
               Write-Host "Checking SSIS deployment status. Attempt $attempt of $maxAttempts..."
 
               $query = @"
-SET NOCOUNT ON;
-
-SELECT
-    DeploymentStatus,
-    ISNULL(DeploymentMessage, '') AS DeploymentMessage
-FROM master.dbo.SSIS_Deploy_Staging
-WHERE DeploymentID = $deploymentId;
-"@
+                SET NOCOUNT ON;
+                
+                SELECT
+                    DeploymentStatus,
+                    ISNULL(DeploymentMessage, '') AS DeploymentMessage
+                FROM master.dbo.SSIS_Deploy_Staging
+                WHERE DeploymentID = $deploymentId;
+                "@
 
               $result = sqlcmd `
                 -S "$env:SQL_SERVER" `
@@ -450,54 +450,54 @@ WHERE DeploymentID = $deploymentId;
           $ssisCommandSql = $ssisCommand.Replace("'", "''")
 
           $sql = @"
-USE msdb;
-GO
-
-IF EXISTS (
-    SELECT 1
-    FROM dbo.sysjobs
-    WHERE name = N'$jobName'
-)
-BEGIN
-    EXEC dbo.sp_delete_job
-        @job_name = N'$jobName',
-        @delete_unused_schedule = 1;
-END;
-GO
-
-EXEC dbo.sp_add_job
-    @job_name = N'$jobName',
-    @enabled = 1,
-    @description = N'Automated timesheet ETL package execution job.';
-GO
-
-EXEC dbo.sp_add_jobstep
-    @job_name = N'$jobName',
-    @step_name = N'Execute_SSIS_Timesheet_Package',
-    @step_id = 1,
-    @subsystem = N'SSIS',
-    @command = N'$ssisCommandSql',
-    @database_name = N'master',
-    @on_success_action = 1,
-    @on_fail_action = 2;
-GO
-
-EXEC dbo.sp_add_jobschedule
-    @job_name = N'$jobName',
-    @name = N'Timesheet_Migration_Every_90_Seconds',
-    @enabled = 1,
-    @freq_type = 4,
-    @freq_interval = 1,
-    @freq_subday_type = 2,
-    @freq_subday_interval = 90,
-    @active_start_time = 000000;
-GO
-
-EXEC dbo.sp_add_jobserver
-    @job_name = N'$jobName',
-    @server_name = N'(local)';
-GO
-"@
+            USE msdb;
+            GO
+            
+            IF EXISTS (
+                SELECT 1
+                FROM dbo.sysjobs
+                WHERE name = N'$jobName'
+            )
+            BEGIN
+                EXEC dbo.sp_delete_job
+                    @job_name = N'$jobName',
+                    @delete_unused_schedule = 1;
+            END;
+            GO
+            
+            EXEC dbo.sp_add_job
+                @job_name = N'$jobName',
+                @enabled = 1,
+                @description = N'Automated timesheet ETL package execution job.';
+            GO
+            
+            EXEC dbo.sp_add_jobstep
+                @job_name = N'$jobName',
+                @step_name = N'Execute_SSIS_Timesheet_Package',
+                @step_id = 1,
+                @subsystem = N'SSIS',
+                @command = N'$ssisCommandSql',
+                @database_name = N'master',
+                @on_success_action = 1,
+                @on_fail_action = 2;
+            GO
+            
+            EXEC dbo.sp_add_jobschedule
+                @job_name = N'$jobName',
+                @name = N'Timesheet_Migration_Every_90_Seconds',
+                @enabled = 1,
+                @freq_type = 4,
+                @freq_interval = 1,
+                @freq_subday_type = 2,
+                @freq_subday_interval = 90,
+                @active_start_time = 000000;
+            GO
+            
+            EXEC dbo.sp_add_jobserver
+                @job_name = N'$jobName',
+                @server_name = N'(local)';
+            GO
+            "@
 
           Set-Content -Path $scriptPath -Value $sql -Encoding UTF8
 
