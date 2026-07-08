@@ -80,7 +80,7 @@ jobs:
         $fileBytes = [System.IO.File]::ReadAllBytes($projectPath)
         $hexString = "0x" + [System.BitConverter]::ToString($fileBytes).Replace("-", "")
         
-        $folderName = "TimesheetDeployments"
+        $folderName = "Migration"
         
         $sqlScript = @(
             "USE master;",
@@ -121,8 +121,8 @@ jobs:
       if: github.ref == 'refs/heads/main' && github.event_name != 'pull_request'
       shell: powershell
       run: |
-        $jobName = "Run_Timesheet_ETL_Job"
-        $folderName = "TimesheetDeployments"
+        $jobName = "Timesheet_Migration"
+        $folderName = "Migration"
         
         $jobQuery = @(
             "USE msdb;",
@@ -254,7 +254,7 @@ jobs:
         $fileBytes = [System.IO.File]::ReadAllBytes($projectPath)
         $hexString = "0x" + [System.BitConverter]::ToString($fileBytes).Replace("-", "")
         
-        $folderName = "TimesheetDeployments"
+        $folderName = "Migration"
         
         $sqlScript = @(
             "USE master;",
@@ -295,8 +295,8 @@ jobs:
       if: github.ref == 'refs/heads/main' && github.event_name != 'pull_request'
       shell: powershell
       run: |
-        $jobName = "Run_Timesheet_ETL_Job"
-        $folderName = "TimesheetDeployments"
+        $jobName = "Timesheet_Migration"
+        $folderName = "Migration"
         
         $jobQuery = @(
             "USE msdb;",
