@@ -1,11 +1,11 @@
-name: Timesheet Migration Tunnel Deployment
+name: Timesheet Migration SSIS Deployment Through Pinggy
 
 on:
   workflow_dispatch:
 
 jobs:
-  deploy-through-tunnel:
-    name: Deploy Through Tunnel
+  deploy-ssis-through-sql-agent:
+    name: Deploy SSIS Through SQL Agent
     runs-on: windows-latest
     environment: production
 
@@ -16,7 +16,7 @@ jobs:
 
       SSIS_FOLDER: Migration
       SSIS_PROJECT: Timesheet_migration
-      SQL_AGENT_JOB: Timesheet_Migration
+      SQL_AGENT_DEPLOY_JOB: Deploy_Timesheet_ISPAC_From_GitHub
 
     steps:
       - name: Checkout Repo
@@ -50,7 +50,7 @@ jobs:
             Select-Object -First 1
 
           if (!$ispac) {
-              throw "No ISPAC file found in the repository. Commit your .ispac file before running this workflow."
+              throw "No ISPAC file found in the repository. Commit the .ispac file before running this workflow."
           }
 
           Write-Host "ISPAC found:"
@@ -60,32 +60,9 @@ jobs:
             -FilePath $env:GITHUB_ENV `
             -Append
 
-      - name: Find DTSX Package Name
-        shell: powershell
-        run: |
-          $package = Get-ChildItem `
-            -Path "." `
-            -Recurse `
-            -Filter "*.dtsx" |
-            Sort-Object LastWriteTime -Descending |
-            Select-Object -First 1
-
-          if (!$package) {
-              throw "No DTSX package found in the repository."
-          }
-
-          Write-Host "Package found:"
-          Write-Host $package.Name
-
-          "SSIS_PACKAGE=$($package.Name)" | Out-File `
-            -FilePath $env:GITHUB_ENV `
-            -Append
-
       - name: Test SQL Tunnel Connection
         shell: powershell
         run: |
-          Write-Host "Testing SQL Server tunnel connection..."
-
           Invoke-Sqlcmd `
             -ServerInstance $env:SQL_SERVER `
             -Database "master" `
@@ -97,184 +74,27 @@ jobs:
 
           Write-Host "SQL Server tunnel connection successful."
 
-      - name: Deploy ISPAC to SSISDB
+      - name: Create Deployment Queue Table
         shell: powershell
         run: |
-          if (!(Test-Path $env:ISPAC_PATH)) {
-              throw "ISPAC path is invalid: $env:ISPAC_PATH"
-          }
-
-          $projectBytes = [System.IO.File]::ReadAllBytes($env:ISPAC_PATH)
-
-          $connectionString = "Server=$env:SQL_SERVER;Database=master;User ID=$env:SQL_USERNAME;Password=$env:SQL_PASSWORD;Encrypt=True;TrustServerCertificate=True;"
-
-          $connection = New-Object System.Data.SqlClient.SqlConnection
-          $connection.ConnectionString = $connectionString
-          $connection.Open()
-
-          try {
-              $command = $connection.CreateCommand()
-              $command.CommandTimeout = 0
-
-              $command.CommandText = "
-              EXEC SSISDB.catalog.deploy_project
-                  @folder_name = @FolderName,
-                  @project_name = @ProjectName,
-                  @project_stream = @ProjectStream;
-              "
-
-              $command.Parameters.Add("@FolderName", [System.Data.SqlDbType]::NVarChar, 128).Value = $env:SSIS_FOLDER
-              $command.Parameters.Add("@ProjectName", [System.Data.SqlDbType]::NVarChar, 128).Value = $env:SSIS_PROJECT
-              $command.Parameters.Add("@ProjectStream", [System.Data.SqlDbType]::VarBinary, -1).Value = $projectBytes
-
-              $command.ExecuteNonQuery()
-
-              Write-Host "SSIS project deployed successfully through tunnel."
-          }
-          finally {
-              $connection.Close()
-          }
-
-      - name: Create SQL Server Agent Job And Schedule
-        shell: powershell
-        run: |
-          $jobName = $env:SQL_AGENT_JOB.Replace("'", "''")
-          $folder = $env:SSIS_FOLDER.Replace("'", "''")
-          $project = $env:SSIS_PROJECT.Replace("'", "''")
-          $package = $env:SSIS_PACKAGE.Replace("'", "''")
-          $scheduleName = "$jobName Every 90 Seconds"
-          $scheduleNameSql = $scheduleName.Replace("'", "''")
-
-          $jobStepCommand = @"
-          DECLARE @execution_id BIGINT;
-
-          EXEC SSISDB.catalog.create_execution
-              @folder_name = N'$folder',
-              @project_name = N'$project',
-              @package_name = N'$package',
-              @execution_id = @execution_id OUTPUT;
-
-          EXEC SSISDB.catalog.start_execution
-              @execution_id = @execution_id;
-          "@
-
-          $jobStepCommand = $jobStepCommand.Replace("'", "''")
-
           $sql = @"
-          USE msdb;
+          USE master;
 
-          IF NOT EXISTS (
-              SELECT 1
-              FROM dbo.sysjobs
-              WHERE name = N'$jobName'
-          )
+          IF OBJECT_ID('dbo.SSISDeploymentQueue', 'U') IS NULL
           BEGIN
-              EXEC dbo.sp_add_job
-                  @job_name = N'$jobName',
-                  @enabled = 1,
-                  @description = N'Runs the Timesheet SSIS package from SSISDB.';
-
-              EXEC dbo.sp_add_jobserver
-                  @job_name = N'$jobName';
-
-              PRINT 'SQL Server Agent job created.';
-          END
-          ELSE
-          BEGIN
-              EXEC dbo.sp_update_job
-                  @job_name = N'$jobName',
-                  @enabled = 1;
-
-              PRINT 'SQL Server Agent job already exists. Job enabled.';
-          END
-
-          IF EXISTS (
-              SELECT 1
-              FROM dbo.sysjobsteps js
-              INNER JOIN dbo.sysjobs j
-                  ON js.job_id = j.job_id
-              WHERE j.name = N'$jobName'
-                AND js.step_id = 1
-          )
-          BEGIN
-              EXEC dbo.sp_update_jobstep
-                  @job_name = N'$jobName',
-                  @step_id = 1,
-                  @step_name = N'Run SSIS Package From SSISDB',
-                  @subsystem = N'TSQL',
-                  @database_name = N'master',
-                  @command = N'$jobStepCommand',
-                  @on_success_action = 1,
-                  @on_fail_action = 2;
-
-              PRINT 'SQL Server Agent job step updated.';
-          END
-          ELSE
-          BEGIN
-              EXEC dbo.sp_add_jobstep
-                  @job_name = N'$jobName',
-                  @step_name = N'Run SSIS Package From SSISDB',
-                  @subsystem = N'TSQL',
-                  @database_name = N'master',
-                  @command = N'$jobStepCommand',
-                  @on_success_action = 1,
-                  @on_fail_action = 2;
-
-              PRINT 'SQL Server Agent job step created.';
-          END
-
-          IF NOT EXISTS (
-              SELECT 1
-              FROM dbo.sysschedules
-              WHERE name = N'$scheduleNameSql'
-          )
-          BEGIN
-              EXEC dbo.sp_add_schedule
-                  @schedule_name = N'$scheduleNameSql',
-                  @enabled = 1,
-                  @freq_type = 4,
-                  @freq_interval = 1,
-                  @freq_subday_type = 2,
-                  @freq_subday_interval = 90,
-                  @active_start_time = 000000;
-
-              PRINT 'Schedule created: every 90 seconds.';
-          END
-          ELSE
-          BEGIN
-              EXEC dbo.sp_update_schedule
-                  @name = N'$scheduleNameSql',
-                  @enabled = 1,
-                  @freq_type = 4,
-                  @freq_interval = 1,
-                  @freq_subday_type = 2,
-                  @freq_subday_interval = 90,
-                  @active_start_time = 000000;
-
-              PRINT 'Schedule updated: every 90 seconds.';
-          END
-
-          IF NOT EXISTS (
-              SELECT 1
-              FROM dbo.sysjobs j
-              INNER JOIN dbo.sysjobschedules js
-                  ON j.job_id = js.job_id
-              INNER JOIN dbo.sysschedules s
-                  ON js.schedule_id = s.schedule_id
-              WHERE j.name = N'$jobName'
-                AND s.name = N'$scheduleNameSql'
-          )
-          BEGIN
-              EXEC dbo.sp_attach_schedule
-                  @job_name = N'$jobName',
-                  @schedule_name = N'$scheduleNameSql';
-
-              PRINT 'Schedule attached to job.';
-          END
-          ELSE
-          BEGIN
-              PRINT 'Schedule already attached to job.';
-          END
+              CREATE TABLE dbo.SSISDeploymentQueue
+              (
+                  DeploymentID INT IDENTITY(1,1) PRIMARY KEY,
+                  FolderName SYSNAME NOT NULL,
+                  ProjectName SYSNAME NOT NULL,
+                  IspacFile VARBINARY(MAX) NOT NULL,
+                  RequestedBy SYSNAME NULL,
+                  RequestedDate DATETIME2 NOT NULL DEFAULT SYSUTCDATETIME(),
+                  DeploymentStatus VARCHAR(30) NOT NULL DEFAULT 'Pending',
+                  DeploymentMessage NVARCHAR(MAX) NULL,
+                  CompletedDate DATETIME2 NULL
+              );
+          END;
           "@
 
           Invoke-Sqlcmd `
@@ -286,43 +106,417 @@ jobs:
             -Query $sql `
             -ErrorAction Stop
 
-      - name: Validate SQL Server Agent Job
+          Write-Host "Deployment queue table exists."
+
+      - name: Upload ISPAC To SQL Server
         shell: powershell
         run: |
-          $jobName = $env:SQL_AGENT_JOB.Replace("'", "''")
+          if (!(Test-Path $env:ISPAC_PATH)) {
+              throw "ISPAC path is invalid: $env:ISPAC_PATH"
+          }
+
+          $ispacBytes = [System.IO.File]::ReadAllBytes($env:ISPAC_PATH)
+
+          $connectionString = "Server=$env:SQL_SERVER;Database=master;User ID=$env:SQL_USERNAME;Password=$env:SQL_PASSWORD;Encrypt=True;TrustServerCertificate=True;"
+
+          $connection = New-Object System.Data.SqlClient.SqlConnection
+          $connection.ConnectionString = $connectionString
+          $connection.Open()
+
+          try {
+              $command = $connection.CreateCommand()
+              $command.CommandTimeout = 0
+
+              $command.CommandText = @"
+              INSERT INTO dbo.SSISDeploymentQueue
+              (
+                  FolderName,
+                  ProjectName,
+                  IspacFile,
+                  RequestedBy,
+                  DeploymentStatus,
+                  DeploymentMessage
+              )
+              OUTPUT INSERTED.DeploymentID
+              VALUES
+              (
+                  @FolderName,
+                  @ProjectName,
+                  @IspacFile,
+                  @RequestedBy,
+                  'Pending',
+                  'ISPAC uploaded from GitHub Actions.'
+              );
+              "@
+
+              $null = $command.Parameters.Add("@FolderName", [System.Data.SqlDbType]::NVarChar, 128)
+              $command.Parameters["@FolderName"].Value = $env:SSIS_FOLDER
+
+              $null = $command.Parameters.Add("@ProjectName", [System.Data.SqlDbType]::NVarChar, 128)
+              $command.Parameters["@ProjectName"].Value = $env:SSIS_PROJECT
+
+              $null = $command.Parameters.Add("@IspacFile", [System.Data.SqlDbType]::VarBinary, -1)
+              $command.Parameters["@IspacFile"].Value = $ispacBytes
+
+              $null = $command.Parameters.Add("@RequestedBy", [System.Data.SqlDbType]::NVarChar, 128)
+              $command.Parameters["@RequestedBy"].Value = "${{ github.actor }}"
+
+              $deploymentId = $command.ExecuteScalar()
+
+              if (!$deploymentId) {
+                  throw "Failed to create deployment record."
+              }
+
+              Write-Host "Deployment queued with ID: $deploymentId"
+
+              "DEPLOYMENT_ID=$deploymentId" | Out-File `
+                -FilePath $env:GITHUB_ENV `
+                -Append
+          }
+          finally {
+              $connection.Close()
+          }
+
+      - name: Create Or Update SQL Agent Deployment Job
+        shell: powershell
+        run: |
+          $jobName = $env:SQL_AGENT_DEPLOY_JOB
+          $jobNameSql = $jobName.Replace("'", "''")
+
+          $deployScript = @'
+          $ErrorActionPreference = "Stop"
+
+          $deployFolder = "C:\SSISDeploy"
+
+          if (!(Test-Path $deployFolder)) {
+              New-Item -ItemType Directory -Path $deployFolder -Force | Out-Null
+          }
+
+          $connectionString = "Server=localhost;Database=master;Integrated Security=True;TrustServerCertificate=True;"
+
+          $connection = New-Object System.Data.SqlClient.SqlConnection
+          $connection.ConnectionString = $connectionString
+          $connection.Open()
+
+          try {
+              $command = $connection.CreateCommand()
+              $command.CommandTimeout = 0
+
+              $command.CommandText = @"
+              SELECT TOP 1
+                  DeploymentID,
+                  FolderName,
+                  ProjectName,
+                  IspacFile
+              FROM dbo.SSISDeploymentQueue
+              WHERE DeploymentStatus = 'Pending'
+              ORDER BY DeploymentID DESC;
+          "@
+
+              $reader = $command.ExecuteReader()
+
+              if (!$reader.Read()) {
+                  Write-Host "No pending deployment found."
+                  exit 0
+              }
+
+              $deploymentId = [int]$reader["DeploymentID"]
+              $folderName = [string]$reader["FolderName"]
+              $projectName = [string]$reader["ProjectName"]
+              $ispacBytes = [byte[]]$reader["IspacFile"]
+
+              $reader.Close()
+
+              $ispacPath = Join-Path $deployFolder "$projectName.ispac"
+
+              [System.IO.File]::WriteAllBytes($ispacPath, $ispacBytes)
+
+              $updateCommand = $connection.CreateCommand()
+              $updateCommand.CommandText = @"
+              UPDATE dbo.SSISDeploymentQueue
+              SET 
+                  DeploymentStatus = 'Running',
+                  DeploymentMessage = 'SQL Agent started local SSIS deployment.'
+              WHERE DeploymentID = @DeploymentID;
+          "@
+
+              $null = $updateCommand.Parameters.Add("@DeploymentID", [System.Data.SqlDbType]::Int)
+              $updateCommand.Parameters["@DeploymentID"].Value = $deploymentId
+              $updateCommand.ExecuteNonQuery() | Out-Null
+
+              $folderCheck = $connection.CreateCommand()
+              $folderCheck.CommandText = @"
+              IF NOT EXISTS (
+                  SELECT 1
+                  FROM SSISDB.catalog.folders
+                  WHERE name = @FolderName
+              )
+              BEGIN
+                  THROW 50001, 'SSISDB folder does not exist.', 1;
+              END;
+          "@
+
+              $null = $folderCheck.Parameters.Add("@FolderName", [System.Data.SqlDbType]::NVarChar, 128)
+              $folderCheck.Parameters["@FolderName"].Value = $folderName
+              $folderCheck.ExecuteNonQuery() | Out-Null
+
+              $wizard = Get-ChildItem `
+                -Path "C:\Program Files", "C:\Program Files (x86)" `
+                -Recurse `
+                -Filter "ISDeploymentWizard.exe" `
+                -ErrorAction SilentlyContinue |
+                Sort-Object FullName -Descending |
+                Select-Object -First 1
+
+              if (!$wizard) {
+                  throw "ISDeploymentWizard.exe was not found. Install SSIS deployment tools on the SQL Server machine."
+              }
+
+              $destinationPath = "/SSISDB/$folderName/$projectName"
+
+              Write-Host "Using deployment wizard:"
+              Write-Host $wizard.FullName
+
+              Write-Host "Deploying:"
+              Write-Host $ispacPath
+
+              Write-Host "Destination:"
+              Write-Host $destinationPath
+
+              $arguments = @(
+                  "/Silent",
+                  "/ModelType:Project",
+                  "/SourcePath:`"$ispacPath`"",
+                  "/DestinationServer:`"localhost`"",
+                  "/DestinationPath:`"$destinationPath`""
+              )
+
+              $process = Start-Process `
+                -FilePath $wizard.FullName `
+                -ArgumentList $arguments `
+                -Wait `
+                -PassThru `
+                -NoNewWindow
+
+              if ($process.ExitCode -ne 0) {
+                  throw "ISDeploymentWizard.exe failed with exit code $($process.ExitCode)."
+              }
+
+              $successCommand = $connection.CreateCommand()
+              $successCommand.CommandText = @"
+              UPDATE dbo.SSISDeploymentQueue
+              SET 
+                  DeploymentStatus = 'Succeeded',
+                  DeploymentMessage = 'SSIS project deployed successfully by SQL Agent.',
+                  CompletedDate = SYSUTCDATETIME()
+              WHERE DeploymentID = @DeploymentID;
+          "@
+
+              $null = $successCommand.Parameters.Add("@DeploymentID", [System.Data.SqlDbType]::Int)
+              $successCommand.Parameters["@DeploymentID"].Value = $deploymentId
+              $successCommand.ExecuteNonQuery() | Out-Null
+
+              Write-Host "SSIS deployment completed successfully."
+          }
+          catch {
+              $errorMessage = $_.Exception.Message
+
+              if ($connection.State -eq "Open" -and $deploymentId) {
+                  $failCommand = $connection.CreateCommand()
+                  $failCommand.CommandText = @"
+              UPDATE dbo.SSISDeploymentQueue
+              SET 
+                  DeploymentStatus = 'Failed',
+                  DeploymentMessage = @DeploymentMessage,
+                  CompletedDate = SYSUTCDATETIME()
+              WHERE DeploymentID = @DeploymentID;
+          "@
+
+                  $null = $failCommand.Parameters.Add("@DeploymentID", [System.Data.SqlDbType]::Int)
+                  $failCommand.Parameters["@DeploymentID"].Value = $deploymentId
+
+                  $null = $failCommand.Parameters.Add("@DeploymentMessage", [System.Data.SqlDbType]::NVarChar, -1)
+                  $failCommand.Parameters["@DeploymentMessage"].Value = $errorMessage
+
+                  $failCommand.ExecuteNonQuery() | Out-Null
+              }
+
+              throw
+          }
+          finally {
+              if ($connection.State -eq "Open") {
+                  $connection.Close()
+              }
+          }
+          '@
+
+          $encodedScript = [Convert]::ToBase64String(
+              [System.Text.Encoding]::Unicode.GetBytes($deployScript)
+          )
+
+          $jobCommand = "powershell.exe -NoProfile -ExecutionPolicy Bypass -EncodedCommand $encodedScript"
+          $jobCommandSql = $jobCommand.Replace("'", "''")
 
           $sql = @"
           USE msdb;
 
-          SELECT TOP 10
-              j.name AS JobName,
-              j.enabled AS JobEnabled,
-              s.name AS ScheduleName,
-              s.enabled AS ScheduleEnabled,
-              s.freq_subday_interval AS RunsEvery,
-              CASE s.freq_subday_type
-                  WHEN 2 THEN 'Seconds'
-                  WHEN 4 THEN 'Minutes'
-                  WHEN 8 THEN 'Hours'
-                  ELSE 'Other'
-              END AS IntervalType,
-              a.start_execution_date,
-              a.stop_execution_date,
-              CASE 
-                  WHEN a.start_execution_date IS NOT NULL 
-                   AND a.stop_execution_date IS NULL 
-                  THEN 'Running'
-                  ELSE 'Not currently running'
-              END AS CurrentStatus
-          FROM dbo.sysjobs j
-          LEFT JOIN dbo.sysjobschedules js
-              ON j.job_id = js.job_id
-          LEFT JOIN dbo.sysschedules s
-              ON js.schedule_id = s.schedule_id
-          LEFT JOIN dbo.sysjobactivity a
-              ON j.job_id = a.job_id
-          WHERE j.name = N'$jobName'
-          ORDER BY a.start_execution_date DESC;
+          IF NOT EXISTS (
+              SELECT 1
+              FROM dbo.sysjobs
+              WHERE name = N'$jobNameSql'
+          )
+          BEGIN
+              EXEC dbo.sp_add_job
+                  @job_name = N'$jobNameSql',
+                  @enabled = 1,
+                  @description = N'Deploys the latest ISPAC uploaded from GitHub Actions.';
+
+              EXEC dbo.sp_add_jobserver
+                  @job_name = N'$jobNameSql';
+
+              PRINT 'SQL Agent deployment job created.';
+          END
+          ELSE
+          BEGIN
+              EXEC dbo.sp_update_job
+                  @job_name = N'$jobNameSql',
+                  @enabled = 1;
+
+              PRINT 'SQL Agent deployment job already exists.';
+          END;
+
+          IF EXISTS (
+              SELECT 1
+              FROM dbo.sysjobsteps js
+              INNER JOIN dbo.sysjobs j
+                  ON js.job_id = j.job_id
+              WHERE j.name = N'$jobNameSql'
+                AND js.step_id = 1
+          )
+          BEGIN
+              EXEC dbo.sp_update_jobstep
+                  @job_name = N'$jobNameSql',
+                  @step_id = 1,
+                  @step_name = N'Deploy ISPAC Locally',
+                  @subsystem = N'CmdExec',
+                  @command = N'$jobCommandSql',
+                  @on_success_action = 1,
+                  @on_fail_action = 2;
+
+              PRINT 'SQL Agent deployment job step updated.';
+          END
+          ELSE
+          BEGIN
+              EXEC dbo.sp_add_jobstep
+                  @job_name = N'$jobNameSql',
+                  @step_name = N'Deploy ISPAC Locally',
+                  @subsystem = N'CmdExec',
+                  @command = N'$jobCommandSql',
+                  @on_success_action = 1,
+                  @on_fail_action = 2;
+
+              PRINT 'SQL Agent deployment job step created.';
+          END;
+          "@
+
+          Invoke-Sqlcmd `
+            -ServerInstance $env:SQL_SERVER `
+            -Database "msdb" `
+            -Username $env:SQL_USERNAME `
+            -Password $env:SQL_PASSWORD `
+            -TrustServerCertificate `
+            -Query $sql `
+            -ErrorAction Stop
+
+      - name: Start SQL Agent Deployment Job
+        shell: powershell
+        run: |
+          $jobName = $env:SQL_AGENT_DEPLOY_JOB.Replace("'", "''")
+
+          $sql = @"
+          EXEC msdb.dbo.sp_start_job
+              @job_name = N'$jobName';
+          "@
+
+          Invoke-Sqlcmd `
+            -ServerInstance $env:SQL_SERVER `
+            -Database "msdb" `
+            -Username $env:SQL_USERNAME `
+            -Password $env:SQL_PASSWORD `
+            -TrustServerCertificate `
+            -Query $sql `
+            -ErrorAction Stop
+
+          Write-Host "SQL Agent deployment job started."
+
+      - name: Wait For Deployment Result
+        shell: powershell
+        run: |
+          $deploymentId = [int]$env:DEPLOYMENT_ID
+          $maxAttempts = 60
+          $delaySeconds = 10
+
+          for ($attempt = 1; $attempt -le $maxAttempts; $attempt++) {
+              Write-Host "Checking deployment status. Attempt $attempt of $maxAttempts..."
+
+              $sql = @"
+              SELECT 
+                  DeploymentStatus,
+                  DeploymentMessage
+              FROM master.dbo.SSISDeploymentQueue
+              WHERE DeploymentID = $deploymentId;
+              "@
+
+              $result = Invoke-Sqlcmd `
+                -ServerInstance $env:SQL_SERVER `
+                -Database "master" `
+                -Username $env:SQL_USERNAME `
+                -Password $env:SQL_PASSWORD `
+                -TrustServerCertificate `
+                -Query $sql `
+                -ErrorAction Stop
+
+              if (!$result) {
+                  throw "Deployment record not found."
+              }
+
+              $status = $result.DeploymentStatus
+              $message = $result.DeploymentMessage
+
+              Write-Host "Status: $status"
+              Write-Host "Message: $message"
+
+              if ($status -eq "Succeeded") {
+                  Write-Host "SSIS deployment completed successfully."
+                  exit 0
+              }
+
+              if ($status -eq "Failed") {
+                  throw "SSIS deployment failed: $message"
+              }
+
+              Start-Sleep -Seconds $delaySeconds
+          }
+
+          throw "Timed out waiting for SSIS deployment to finish."
+
+      - name: Validate Deployed SSIS Project
+        shell: powershell
+        run: |
+          $folder = $env:SSIS_FOLDER.Replace("'", "''")
+          $project = $env:SSIS_PROJECT.Replace("'", "''")
+
+          $sql = @"
+          SELECT 
+              f.name AS FolderName,
+              p.name AS ProjectName,
+              p.created_time,
+              p.last_deployed_time
+          FROM SSISDB.catalog.projects p
+          INNER JOIN SSISDB.catalog.folders f
+              ON p.folder_id = f.folder_id
+          WHERE f.name = N'$folder'
+            AND p.name = N'$project';
           "@
 
           Invoke-Sqlcmd `
