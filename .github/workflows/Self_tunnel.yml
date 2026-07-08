@@ -97,38 +97,6 @@ jobs:
 
           Write-Host "SQL Server tunnel connection successful."
 
-      - name: Create SSIS Folder If Missing
-        shell: powershell
-        run: |
-          $folder = $env:SSIS_FOLDER.Replace("'", "''")
-
-          $sql = @"
-          IF NOT EXISTS (
-              SELECT 1
-              FROM SSISDB.catalog.folders
-              WHERE name = N'$folder'
-          )
-          BEGIN
-              EXEC SSISDB.catalog.create_folder
-                  @folder_name = N'$folder';
-
-              PRINT 'SSIS folder created.';
-          END
-          ELSE
-          BEGIN
-              PRINT 'SSIS folder already exists.';
-          END
-          "@
-
-          Invoke-Sqlcmd `
-            -ServerInstance $env:SQL_SERVER `
-            -Database "master" `
-            -Username $env:SQL_USERNAME `
-            -Password $env:SQL_PASSWORD `
-            -TrustServerCertificate `
-            -Query $sql `
-            -ErrorAction Stop
-
       - name: Deploy ISPAC to SSISDB
         shell: powershell
         run: |
