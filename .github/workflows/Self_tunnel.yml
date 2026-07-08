@@ -91,7 +91,6 @@ jobs:
             -Database "master" `
             -Username $env:SQL_USERNAME `
             -Password $env:SQL_PASSWORD `
-            -TrustServerCertificate `
             -Query "SELECT @@SERVERNAME AS ServerName, DB_NAME() AS CurrentDatabase;" `
             -ErrorAction Stop
 
@@ -125,7 +124,6 @@ jobs:
             -Database "master" `
             -Username $env:SQL_USERNAME `
             -Password $env:SQL_PASSWORD `
-            -TrustServerCertificate `
             -Query $sql `
             -ErrorAction Stop
 
@@ -314,7 +312,6 @@ jobs:
             -Database "master" `
             -Username $env:SQL_USERNAME `
             -Password $env:SQL_PASSWORD `
-            -TrustServerCertificate `
             -Query $sql `
             -ErrorAction Stop
 
@@ -362,6 +359,5 @@ jobs:
             -Database "master" `
             -Username $env:SQL_USERNAME `
             -Password $env:SQL_PASSWORD `
-            -TrustServerCertificate `
             -Query $sql `
             -ErrorAction Stop
