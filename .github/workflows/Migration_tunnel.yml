@@ -1,4 +1,4 @@
-name: Automation SSIS DEPLOY
+name: Timesheet Automation
  
 on:
   
@@ -6,7 +6,7 @@ on:
  
 jobs:
   
-  deploy-sambe:
+  deploy-local:
     name: DevTest/Deploy
     runs-on: windows-latest
     
@@ -80,7 +80,7 @@ jobs:
         $fileBytes = [System.IO.File]::ReadAllBytes($projectPath)
         $hexString = "0x" + [System.BitConverter]::ToString($fileBytes).Replace("-", "")
         
-        $folderName = "Migration"
+        $folderName = "TimesheetDevTestMigration"
         
         $sqlScript = @(
             "USE master;",
@@ -121,8 +121,8 @@ jobs:
       if: github.ref == 'refs/heads/main' && github.event_name != 'pull_request'
       shell: powershell
       run: |
-        $jobName = "Timesheet_Migration"
-        $folderName = "Migration"
+        $jobName = "RunTimesheetDevTestMigrationPK"
+        $folderName = "TimesheetDevTestMigration"
         
         $jobQuery = @(
             "USE msdb;",
@@ -158,7 +158,7 @@ jobs:
       run: |
         $timestamp = Get-Date -Format "yyyy-MM-dd"
 
-        $text = "SSIS DEPLOYMENT (SHRIYA) - SUCCESS`n`nCreator: ${{ github.actor }}`n`nEnvironment: production`n`nDate: $timestamp`n`nDeployment completed successfully."
+        $text = "SSIS DEPLOYMENT (Buhle) - SUCCESS`n`nCreator: ${{ github.actor }}`n`nEnvironment: production`n`nDate: $timestamp`n`nDeployment completed successfully."
 
         $payload = @{ text = $text } | ConvertTo-Json -Depth 1
 
@@ -176,7 +176,7 @@ jobs:
       run: |
         $timestamp = Get-Date -Format "yyyy-MM-dd"
 
-        $text = "SSIS DEPLOYMENT (SHRIYA) - FAILED`n`nCreator: ${{ github.actor }}`n`nEnvironment: production`n`nDate: $timestamp`n`nDeployment failed. Please review logs."
+        $text = "SSIS DEPLOYMENT (Buhle) - FAILED`n`nCreator: ${{ github.actor }}`n`nEnvironment: production`n`nDate: $timestamp`n`nDeployment failed. Please review logs."
 
         $payload = @{ text = $text } | ConvertTo-Json -Depth 1
 
@@ -254,7 +254,7 @@ jobs:
         $fileBytes = [System.IO.File]::ReadAllBytes($projectPath)
         $hexString = "0x" + [System.BitConverter]::ToString($fileBytes).Replace("-", "")
         
-        $folderName = "Migration"
+        $folderName = "TimesheetProductionMigration"
         
         $sqlScript = @(
             "USE master;",
@@ -295,8 +295,8 @@ jobs:
       if: github.ref == 'refs/heads/main' && github.event_name != 'pull_request'
       shell: powershell
       run: |
-        $jobName = "Timesheet_Migration"
-        $folderName = "Migration"
+        $jobName = "RunTimesheetProductionMigrationPK"
+        $folderName = "TimesheetProductionMigration"
         
         $jobQuery = @(
             "USE msdb;",
