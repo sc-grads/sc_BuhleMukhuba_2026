@@ -192,7 +192,7 @@ jobs:
   deploy-shriya:
     name: Production/Deploy
     runs-on: windows-latest
-    needs: deploy-sambe 
+    needs: deploy-local 
     
     # Points cleanly to your exact environment profile name 
     environment:
