@@ -7,7 +7,7 @@ on:
 jobs:
   
   deploy-sambe:
-    name: deploy
+    name: DevTest/Deploy
     runs-on: windows-latest
     
     environment:
@@ -189,8 +189,8 @@ jobs:
 
   # JOB 2: Deploy to Shriya )
   
-  deploy-buhle:
-    name: deploy-Shriya
+  deploy-shriya:
+    name: Production/Deploy
     runs-on: windows-latest
     needs: deploy-sambe 
     
